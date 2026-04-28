@@ -7,7 +7,10 @@
       "Bash(node -e ' *)",
       "Bash(node inject.js)",
       "Bash(git checkout *)",
-      "Bash(rm inject.js current_source.jsx)"
+      "Bash(rm inject.js current_source.jsx)",
+      "Bash(git stash *)",
+      "Bash(rm inject.js new_source.jsx)",
+      "Bash(awk '{print $5, $9}')"
     ]
   }
 }

@@ -281,6 +281,46 @@
     .mbtn.sec { background: var(--gray-1); color: var(--gray-3); }
 
     @media (max-width: 400px) { .catalog { padding-inline: 12px; } }
+
+    /* ─── ADMIN PANEL ─── */
+    .admin-overlay { position: fixed; inset: 0; background: var(--white); z-index: 400; display: flex; flex-direction: column; overflow: hidden; }
+    .admin-top { background: var(--navy); padding: 14px 20px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .admin-top-title { font-family: var(--display); font-size: 16px; font-weight: 800; color: #fff; flex: 1; }
+    .admin-close { background: rgba(255,255,255,0.12); border: none; border-radius: 6px; width: 32px; height: 32px; color: #fff; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .admin-body { flex: 1; overflow-y: auto; padding: 16px; max-width: 600px; width: 100%; margin: 0 auto; }
+    .admin-add-btn { width: 100%; padding: 12px; border: 1.5px dashed var(--gray-2); border-radius: 6px; background: none; color: var(--navy); font-family: var(--body); font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 20px; transition: all .15s; }
+    .admin-add-btn:hover { border-color: var(--navy); background: var(--ice-lt); }
+    .admin-prod-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--gray-1); }
+    .admin-prod-img { width: 44px; height: 44px; background: var(--ice-lt); border-radius: 4px; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .admin-prod-img img { width: 100%; height: 100%; object-fit: cover; }
+    .admin-prod-info { flex: 1; min-width: 0; }
+    .admin-prod-code { font-size: 10px; font-weight: 700; color: var(--gray-3); text-transform: uppercase; letter-spacing: 1px; }
+    .admin-prod-name { font-size: 13px; font-weight: 600; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .admin-prod-prices { font-size: 11px; color: var(--gray-3); margin-top: 2px; }
+    .admin-prod-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .admin-action-btn { padding: 5px 10px; border-radius: 4px; border: 1.5px solid var(--gray-2); background: var(--white); font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s; color: var(--text); font-family: var(--body); }
+    .admin-action-btn:hover { border-color: var(--navy); color: var(--navy); }
+    .admin-action-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* ─── PRODUCT FORM MODAL ─── */
+    .form-modal-bd { position: fixed; inset: 0; background: rgba(11,15,46,0.55); z-index: 500; display: flex; align-items: flex-end; justify-content: center; }
+    .form-modal { background: var(--white); border-radius: 16px 16px 0 0; width: 100%; max-width: 540px; max-height: 90dvh; display: flex; flex-direction: column; }
+    .form-modal-header { padding: 14px 20px 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--gray-1); flex-shrink: 0; }
+    .form-modal-title { font-family: var(--display); font-size: 16px; font-weight: 800; }
+    .form-body { padding: 16px 20px; overflow-y: auto; flex: 1; }
+    .form-row { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 11px; font-weight: 700; color: var(--gray-3); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 5px; }
+    .form-input { width: 100%; padding: 10px 12px; border: 1.5px solid var(--gray-2); border-radius: 6px; font-family: var(--body); font-size: 14px; font-weight: 500; color: var(--text); outline: none; transition: border-color .15s; background: var(--white); }
+    .form-input:focus { border-color: var(--navy); }
+    .form-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .form-photo-area { border: 1.5px dashed var(--gray-2); border-radius: 6px; padding: 14px; text-align: center; cursor: pointer; transition: all .15s; }
+    .form-photo-area:hover { border-color: var(--navy); background: var(--ice-lt); }
+    .form-photo-preview { width: 72px; height: 72px; border-radius: 6px; object-fit: cover; margin: 0 auto 8px; display: block; }
+    .form-footer { padding: 12px 20px 20px; border-top: 1px solid var(--gray-1); display: flex; gap: 8px; flex-shrink: 0; }
+    .form-save-btn { flex: 1; padding: 13px; border: none; border-radius: 6px; background: var(--navy); color: #fff; font-family: var(--display); font-size: 14px; font-weight: 800; cursor: pointer; transition: background .15s; }
+    .form-save-btn:hover { background: var(--navy2); }
+    .form-cancel-btn { padding: 13px 20px; border: 1.5px solid var(--gray-2); border-radius: 6px; background: var(--white); color: var(--gray-3); font-family: var(--body); font-size: 14px; font-weight: 600; cursor: pointer; transition: all .15s; }
+    .form-cancel-btn:hover { border-color: var(--navy); color: var(--navy); }
   </style>
 </head>
 <body>
@@ -293,70 +333,112 @@ const ADMIN_PIN = "2148";
 
 function fmtARS(n) { return "$" + Number(n).toLocaleString("es-AR"); }
 
-// ─── FULL PRODUCT CATALOG
-const ALL_PRODUCTS = [
-  // HIELO
-  { id:"H15", name:"Hielo Bolsa 15 kg", brand:"hielo", retail:9000, mayor:8000, stock:99 },
-  { id:"H03", name:"Hielo Bolsa 3 kg", brand:"hielo", retail:3500, mayor:2400, stock:99 },
-  // ACAPULCO
-  { id:"AC01", name:"Agua 2 Sabores Surtido Caja ×40", brand:"acapulco", retail:14260, mayor:11091, stock:99 },
-  { id:"AC02", name:"Palito Bombón Caja ×40", brand:"acapulco", retail:24785, mayor:19277, stock:99 },
-  { id:"AC03", name:"Cono Bola Americano Caja ×14", brand:"acapulco", retail:19183, mayor:14920, stock:99 },
+// ─── CSV UTILITIES ───────────────────────────────────────────────────────────
+function parseCSVLine(line) {
+  const fields = []; let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQ) {
+      if (c==='"' && line[i+1]==='"') { cur+='"'; i++; }
+      else if (c==='"') { inQ=false; }
+      else { cur+=c; }
+    } else {
+      if (c==='"') { inQ=true; }
+      else if (c===',') { fields.push(cur); cur=''; }
+      else { cur+=c; }
+    }
+  }
+  fields.push(cur);
+  return fields;
+}
+
+function parseCSV(text) {
+  const lines = text.trim().replace(/\r\n/g,'\n').split('\n');
+  return lines.slice(1).filter(l=>l.trim()).map(line=>{
+    const f = parseCSVLine(line);
+    return {
+      id: f[0]||'', name: f[1]||'',
+      retail: parseInt(f[2])||0, mayor: parseInt(f[3])||0,
+      stock: f[4]!==undefined && f[4]!=='' ? parseInt(f[4]) : 99,
+      brand: f[5]||'helados', photo: f[8]||'',
+    };
+  }).filter(p=>p.id);
+}
+
+function serializeCSV(products) {
+  function esc(v) {
+    const s = v==null?'':String(v);
+    return (s.includes(',')||s.includes('"')||s.includes('\n'))
+      ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }
+  const hdr = 'codigo,nombre,precio_minorista,precio_mayorista,stock,categoria,desc,visible,foto';
+  return hdr+'\n'+products.map(p=>
+    [p.id,p.name,p.retail,p.mayor,p.stock,p.brand,'','true',p.photo||''].map(esc).join(',')
+  ).join('\n')+'\n';
+}
+
+async function saveToServer(products) {
+  try { await fetch('/products.csv',{method:'POST',body:serializeCSV(products)}); } catch{}
+}
+
+// ─── DEFAULT PRODUCTS (fallback when no server) ──────────────────────────────
+const DEFAULT_PRODUCTS = [
+  { id:"H15", name:"Hielo Bolsa 15 kg", brand:"hielo", retail:9000, mayor:8000, stock:99, photo:"" },
+  { id:"H03", name:"Hielo Bolsa 3 kg", brand:"hielo", retail:3500, mayor:2400, stock:99, photo:"" },
+  { id:"AC01", name:"Agua 2 Sabores Surtido Caja ×40", brand:"helados", retail:14260, mayor:11091, stock:99, photo:"" },
+  { id:"AC02", name:"Palito Bombón Caja ×40", brand:"helados", retail:24785, mayor:19277, stock:99, photo:"" },
+  { id:"AC03", name:"Cono Bola Americano Caja ×14", brand:"helados", retail:19183, mayor:14920, stock:99, photo:"" },
   { id:"AC04", name:"Cono Bola Chocolate Caja ×14", brand:"acapulco", retail:19183, mayor:14920, stock:99 },
-  { id:"AC05", name:"Cono Bola Dulce de Leche Caja ×14", brand:"acapulco", retail:19183, mayor:14920, stock:99 },
-  { id:"AC06", name:"Crocante Americano Caja ×14", brand:"acapulco", retail:19183, mayor:14920, stock:99 },
-  // DOLCE NEVE
-  { id:"DN01", name:"Frutales Surtidos Caja ×20", brand:"dolceneve", retail:9846, mayor:7658, stock:99 },
-  { id:"DN02", name:"Frutales Surtido Pack ×10", brand:"dolceneve", retail:6621, mayor:5149, stock:99 },
-  { id:"DN03", name:"Zombies Relleno Crema Americano Caja ×20", brand:"dolceneve", retail:14090, mayor:10959, stock:99 },
-  { id:"DN04", name:"Power Bots Surtido Caja ×24", brand:"dolceneve", retail:23087, mayor:17957, stock:99 },
-  { id:"DN05", name:"Carita Chocolate-Vainilla Caja ×30", brand:"dolceneve", retail:24615, mayor:19145, stock:99 },
-  { id:"DN06", name:"Carita Frutilla-Vainilla Caja ×30", brand:"dolceneve", retail:24615, mayor:19145, stock:99 },
-  { id:"DN07", name:"Sombrero Loco Chocolate-Americano Caja ×30", brand:"dolceneve", retail:24615, mayor:19145, stock:99 },
-  { id:"DN08", name:"Sombrero Loco Frutilla-Vainilla Caja ×30", brand:"dolceneve", retail:24615, mayor:19145, stock:99 },
-  { id:"DN09", name:"Gol Chocolate-Americano Caja ×30", brand:"dolceneve", retail:24615, mayor:19145, stock:99 },
-  { id:"DN10", name:"Granizado Dulce de Leche Caja ×30", brand:"dolceneve", retail:22239, mayor:17297, stock:99 },
-  { id:"DN11", name:"Granizado Americano Caja ×30", brand:"dolceneve", retail:22239, mayor:17297, stock:99 },
-  { id:"DN12", name:"Bombón Clásico Caja ×20", brand:"dolceneve", retail:18504, mayor:14392, stock:99 },
-  { id:"DN13", name:"Bombón Clásico Pack ×10", brand:"dolceneve", retail:10525, mayor:8186, stock:99 },
-  { id:"DN14", name:"Bombón Crocantino Caja ×12", brand:"dolceneve", retail:16637, mayor:12940, stock:99 },
-  { id:"DN15", name:"Bombón Piu Latte Caja ×12", brand:"dolceneve", retail:22234, mayor:17293, stock:99 },
-  { id:"DN16", name:"Bombón Piu Almendrado Caja ×12", brand:"dolceneve", retail:22234, mayor:17293, stock:99 },
-  { id:"DN17", name:"Bombón Piu Blanco Caja ×12", brand:"dolceneve", retail:22234, mayor:17293, stock:99 },
-  { id:"DN18", name:"Alfajor Helado Caja ×16", brand:"dolceneve", retail:24276, mayor:18881, stock:99 },
-  { id:"DN19", name:"Alfajor Helado Pack ×8", brand:"dolceneve", retail:13751, mayor:10695, stock:99 },
-  { id:"DN20", name:"Fiesta Chocolate-Vainilla Caja ×24", brand:"dolceneve", retail:20541, mayor:15976, stock:99 },
-  { id:"DN21", name:"Fiesta Chocolate-Frutilla Caja ×24", brand:"dolceneve", retail:20541, mayor:15976, stock:99 },
-  { id:"DN22", name:"Copa Cream Choc-Americano Caja ×12", brand:"dolceneve", retail:20541, mayor:15976, stock:99 },
-  { id:"DN23", name:"Copa Cream Frutilla-Americano Caja ×12", brand:"dolceneve", retail:20541, mayor:15976, stock:99 },
-  { id:"DN24", name:"Copa Cream Banana Split Caja ×12", brand:"dolceneve", retail:20541, mayor:15976, stock:99 },
-  { id:"DN25", name:"Cono Americano Caja ×14", brand:"dolceneve", retail:19183, mayor:14920, stock:99 },
-  { id:"DN26", name:"Cono Crocante Chocolate Caja ×14", brand:"dolceneve", retail:22069, mayor:17165, stock:99 },
-  { id:"DN27", name:"Cono Crocante Dulce de Leche Caja ×14", brand:"dolceneve", retail:22069, mayor:17165, stock:99 },
-  { id:"DN28", name:"Cono Crocante DL Pack ×6", brand:"dolceneve", retail:10696, mayor:8319, stock:99 },
-  { id:"DN29", name:"Ecco Granizado Caja ×14", brand:"dolceneve", retail:25634, mayor:19938, stock:99 },
-  { id:"DN30", name:"Ecco Granizado Dulce de Leche Caja ×14", brand:"dolceneve", retail:25634, mayor:19938, stock:99 },
-  { id:"DN31", name:"Ecco Blanco Caja ×14", brand:"dolceneve", retail:25634, mayor:19938, stock:99 },
-  { id:"DN32", name:"Ecco Negro Chocolate Caja ×14", brand:"dolceneve", retail:25634, mayor:19938, stock:99 },
-  // QUEEN RETAIL
-  { id:"QH01", name:"Torta Chocolate-DL con Pionono", brand:"queen", retail:12732, mayor:9903, stock:99 },
-  { id:"QH02", name:"Torta Americano-Frutilla con Pionono", brand:"queen", retail:12732, mayor:9903, stock:99 },
-  { id:"QH03", name:"Tableta Bloque Dulce de Leche Caja ×18", brand:"queen", retail:17316, mayor:13468, stock:99 },
-  { id:"QH04", name:"Tableta Bloque Americano Caja ×18", brand:"queen", retail:17316, mayor:13468, stock:99 },
-  { id:"QH05", name:"Barrita DL Queen Bar Pack ×12", brand:"queen", retail:13751, mayor:10695, stock:99 },
-  { id:"QH06", name:"Bombón Suizo Pack ×8", brand:"queen", retail:14940, mayor:11620, stock:99 },
-  { id:"QH07", name:"Postre Almendrado Pack ×8", brand:"queen", retail:9846, mayor:7658, stock:99 },
-  { id:"QH08", name:"Postre Tricolor Pack ×8", brand:"queen", retail:9846, mayor:7658, stock:99 },
-  { id:"QH09", name:"Bombón Escocés Blanco Pack ×8", brand:"queen", retail:14939, mayor:11619, stock:99 },
-  // QUEEN GASTRONOMIA
-  { id:"QG01", name:"Bombón Suizo Gastronomía Caja ×30", brand:"queen-gastro", retail:48382, mayor:37630, stock:99 },
-  { id:"QG02", name:"Postre Almendrado Gastronomía Caja ×30", brand:"queen-gastro", retail:30557, mayor:23767, stock:99 },
-  { id:"QG03", name:"Postre Napolitano Gastronomía Caja ×30", brand:"queen-gastro", retail:30557, mayor:23767, stock:99 },
-  { id:"QG04", name:"Bombón Escocés Negro Gastronomía Caja ×30", brand:"queen-gastro", retail:48382, mayor:37630, stock:99 },
-  { id:"QG05", name:"Bombón Escocés Blanco Gastronomía Caja ×30", brand:"queen-gastro", retail:48382, mayor:37630, stock:99 },
-  // GRANEL
-  { id:"HL01", name:"Helado a Granel Común 10 L", brand:"granel", retail:53305, mayor:41459, stock:99 },
-  { id:"HL02", name:"Helado a Granel Especial 10 L", brand:"granel", retail:63151, mayor:49118, stock:99 },
+  { id:"AC05", name:"Cono Bola Dulce de Leche Caja ×14", brand:"helados", retail:19183, mayor:14920, stock:99, photo:"" },
+  { id:"AC06", name:"Crocante Americano Caja ×14", brand:"helados", retail:19183, mayor:14920, stock:99, photo:"" },
+  { id:"DN01", name:"Frutales Surtidos Caja ×20", brand:"helados", retail:9846, mayor:7658, stock:99, photo:"" },
+  { id:"DN02", name:"Frutales Surtido Pack ×10", brand:"helados", retail:6621, mayor:5149, stock:99, photo:"" },
+  { id:"DN03", name:"Zombies Relleno Crema Americano Caja ×20", brand:"helados", retail:14090, mayor:10959, stock:99, photo:"" },
+  { id:"DN04", name:"Power Bots Surtido Caja ×24", brand:"helados", retail:23087, mayor:17957, stock:99, photo:"" },
+  { id:"DN05", name:"Carita Chocolate-Vainilla Caja ×30", brand:"helados", retail:24615, mayor:19145, stock:99, photo:"" },
+  { id:"DN06", name:"Carita Frutilla-Vainilla Caja ×30", brand:"helados", retail:24615, mayor:19145, stock:99, photo:"" },
+  { id:"DN07", name:"Sombrero Loco Chocolate-Americano Caja ×30", brand:"helados", retail:24615, mayor:19145, stock:99, photo:"" },
+  { id:"DN08", name:"Sombrero Loco Frutilla-Vainilla Caja ×30", brand:"helados", retail:24615, mayor:19145, stock:99, photo:"" },
+  { id:"DN09", name:"Gol Chocolate-Americano Caja ×30", brand:"helados", retail:24615, mayor:19145, stock:99, photo:"" },
+  { id:"DN10", name:"Granizado Dulce de Leche Caja ×30", brand:"helados", retail:22239, mayor:17297, stock:99, photo:"" },
+  { id:"DN11", name:"Granizado Americano Caja ×30", brand:"helados", retail:22239, mayor:17297, stock:99, photo:"" },
+  { id:"DN12", name:"Bombón Clásico Caja ×20", brand:"helados", retail:18504, mayor:14392, stock:99, photo:"" },
+  { id:"DN13", name:"Bombón Clásico Pack ×10", brand:"helados", retail:10525, mayor:8186, stock:99, photo:"" },
+  { id:"DN14", name:"Bombón Crocantino Caja ×12", brand:"helados", retail:16637, mayor:12940, stock:99, photo:"" },
+  { id:"DN15", name:"Bombón Piu Latte Caja ×12", brand:"helados", retail:22234, mayor:17293, stock:99, photo:"" },
+  { id:"DN16", name:"Bombón Piu Almendrado Caja ×12", brand:"helados", retail:22234, mayor:17293, stock:99, photo:"" },
+  { id:"DN17", name:"Bombón Piu Blanco Caja ×12", brand:"helados", retail:22234, mayor:17293, stock:99, photo:"" },
+  { id:"DN18", name:"Alfajor Helado Caja ×16", brand:"helados", retail:24276, mayor:18881, stock:99, photo:"" },
+  { id:"DN19", name:"Alfajor Helado Pack ×8", brand:"helados", retail:13751, mayor:10695, stock:99, photo:"" },
+  { id:"DN20", name:"Fiesta Chocolate-Vainilla Caja ×24", brand:"helados", retail:20541, mayor:15976, stock:99, photo:"" },
+  { id:"DN21", name:"Fiesta Chocolate-Frutilla Caja ×24", brand:"helados", retail:20541, mayor:15976, stock:99, photo:"" },
+  { id:"DN22", name:"Copa Cream Choc-Americano Caja ×12", brand:"helados", retail:20541, mayor:15976, stock:99, photo:"" },
+  { id:"DN23", name:"Copa Cream Frutilla-Americano Caja ×12", brand:"helados", retail:20541, mayor:15976, stock:99, photo:"" },
+  { id:"DN24", name:"Copa Cream Banana Split Caja ×12", brand:"helados", retail:20541, mayor:15976, stock:99, photo:"" },
+  { id:"DN25", name:"Cono Americano Caja ×14", brand:"helados", retail:19183, mayor:14920, stock:99, photo:"" },
+  { id:"DN26", name:"Cono Crocante Chocolate Caja ×14", brand:"helados", retail:22069, mayor:17165, stock:99, photo:"" },
+  { id:"DN27", name:"Cono Crocante Dulce de Leche Caja ×14", brand:"helados", retail:22069, mayor:17165, stock:99, photo:"" },
+  { id:"DN28", name:"Cono Crocante DL Pack ×6", brand:"helados", retail:10696, mayor:8319, stock:99, photo:"" },
+  { id:"DN29", name:"Ecco Granizado Caja ×14", brand:"helados", retail:25634, mayor:19938, stock:99, photo:"" },
+  { id:"DN30", name:"Ecco Granizado Dulce de Leche Caja ×14", brand:"helados", retail:25634, mayor:19938, stock:99, photo:"" },
+  { id:"DN31", name:"Ecco Blanco Caja ×14", brand:"helados", retail:25634, mayor:19938, stock:99, photo:"" },
+  { id:"DN32", name:"Ecco Negro Chocolate Caja ×14", brand:"helados", retail:25634, mayor:19938, stock:99, photo:"" },
+  { id:"QH01", name:"Torta Chocolate-DL con Pionono", brand:"helados", retail:12732, mayor:9903, stock:99, photo:"" },
+  { id:"QH02", name:"Torta Americano-Frutilla con Pionono", brand:"helados", retail:12732, mayor:9903, stock:99, photo:"" },
+  { id:"QH03", name:"Tableta Bloque Dulce de Leche Caja ×18", brand:"helados", retail:17316, mayor:13468, stock:99, photo:"" },
+  { id:"QH04", name:"Tableta Bloque Americano Caja ×18", brand:"helados", retail:17316, mayor:13468, stock:99, photo:"" },
+  { id:"QH05", name:"Barrita DL Queen Bar Pack ×12", brand:"helados", retail:13751, mayor:10695, stock:99, photo:"" },
+  { id:"QH06", name:"Bombón Suizo Pack ×8", brand:"helados", retail:14940, mayor:11620, stock:99, photo:"" },
+  { id:"QH07", name:"Postre Almendrado Pack ×8", brand:"helados", retail:9846, mayor:7658, stock:99, photo:"" },
+  { id:"QH08", name:"Postre Tricolor Pack ×8", brand:"helados", retail:9846, mayor:7658, stock:99, photo:"" },
+  { id:"QH09", name:"Bombón Escocés Blanco Pack ×8", brand:"helados", retail:14939, mayor:11619, stock:99, photo:"" },
+  { id:"QG01", name:"Bombón Suizo Gastronomía Caja ×30", brand:"helados", retail:48382, mayor:37630, stock:99, photo:"" },
+  { id:"QG02", name:"Postre Almendrado Gastronomía Caja ×30", brand:"helados", retail:30557, mayor:23767, stock:99, photo:"" },
+  { id:"QG03", name:"Postre Napolitano Gastronomía Caja ×30", brand:"helados", retail:30557, mayor:23767, stock:99, photo:"" },
+  { id:"QG04", name:"Bombón Escocés Negro Gastronomía Caja ×30", brand:"helados", retail:48382, mayor:37630, stock:99, photo:"" },
+  { id:"QG05", name:"Bombón Escocés Blanco Gastronomía Caja ×30", brand:"helados", retail:48382, mayor:37630, stock:99, photo:"" },
+  { id:"HL01", name:"Helado a Granel Común 10 L", brand:"helados", retail:53305, mayor:41459, stock:99, photo:"" },
+  { id:"HL02", name:"Helado a Granel Especial 10 L", brand:"helados", retail:63151, mayor:49118, stock:99, photo:"" },
 ];
 
 const BRANDS = [
@@ -372,16 +454,16 @@ function ProductRow({ product, qty, onAdd, onRemove, mode }) {
   return (
     <div className={`product-row ${qty>0?"in-cart":""} ${out?"out-of-stock":""}`}>
       <div className="prod-img">
-        <div className="prod-img-ph"></div>
+        {product.photo
+          ? <img src={product.photo} alt="" />
+          : <div className="prod-img-ph"></div>}
       </div>
       <div className="prod-info">
         <div className="prod-name">{product.name}</div>
         <div className="prod-price">{fmtARS(price)}</div>
-        {out
-          ? <span className="prod-stock none">Sin stock</span>
-          : low
-            ? <span className="prod-stock low">Últimas {product.stock}</span>
-            : null}
+        {out ? <span className="prod-stock none">Sin stock</span>
+          : low ? <span className="prod-stock low">Últimas {product.stock}</span>
+          : null}
       </div>
       <div className="qty-ctrl">
         <button className="qty-btn" onClick={onRemove} disabled={qty===0} style={{opacity:qty===0?.35:1}}>−</button>
@@ -397,6 +479,7 @@ function CartDrawer({ open, onClose, cart, mode, onSend, onRemove }) {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const total = cart.reduce((s,i)=>s+i.price*i.qty, 0);
+
 
   function handleSend() {
     const lines = cart.map(i=>`• ${i.product.name} × ${i.qty} = ${fmtARS(i.price*i.qty)}`);
@@ -427,7 +510,11 @@ function CartDrawer({ open, onClose, cart, mode, onSend, onRemove }) {
             ? <div className="drawer-empty"><div style={{fontSize:40,marginBottom:12}}>🛒</div><div style={{fontWeight:600}}>Carrito vacío</div></div>
             : cart.map(i=>(
               <div className="cart-item" key={i.product.id}>
-                <div className="ci-img"></div>
+                <div className="ci-img">
+                  {i.product.photo
+                    ? <img src={i.product.photo} alt="" />
+                    : <span style={{fontSize:20}}>{i.product.brand==='hielo'?'🧊':'🍦'}</span>}
+                </div>
                 <div className="ci-info">
                   <div className="ci-name">{i.product.name}</div>
                   <div className="ci-qty">× {i.qty}</div>
@@ -491,46 +578,217 @@ function PinModal({ onSuccess, onCancel }) {
   );
 }
 
+function ProductForm({ product, onSave, onCancel }) {
+  const isNew = !product;
+  const [form, setForm] = useState(product ? {...product} : {
+    id:'', name:'', retail:0, mayor:0, stock:99, brand:'helados', photo:''
+  });
+  const fileRef = useRef();
+
+  function set(k,v) { setForm(f=>({...f,[k]:v})); }
+
+  function handlePhoto(e) {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => set('photo', ev.target.result);
+    reader.readAsDataURL(file);
+  }
+
+  function submit() {
+    if (!form.id.trim() || !form.name.trim()) { alert('Código y nombre son obligatorios.'); return; }
+    onSave({ ...form, id:form.id.trim().toUpperCase(), name:form.name.trim(),
+      retail:parseInt(form.retail)||0, mayor:parseInt(form.mayor)||0, stock:parseInt(form.stock)||0 });
+  }
+
+  return (
+    <div className="form-modal-bd">
+      <div className="form-modal">
+        <div className="form-modal-header">
+          <div className="form-modal-title">{isNew?'+ Nuevo producto':'Editar producto'}</div>
+          <button className="drawer-close" onClick={onCancel}>✕</button>
+        </div>
+        <div className="form-body">
+          <div className="form-row">
+            <label className="form-label">Código</label>
+            <input className="form-input" value={form.id} onChange={e=>set('id',e.target.value)}
+              disabled={!isNew} placeholder="Ej: DN33" style={!isNew?{background:'var(--gray-1)'}:{}} />
+          </div>
+          <div className="form-row">
+            <label className="form-label">Nombre</label>
+            <input className="form-input" value={form.name} onChange={e=>set('name',e.target.value)} placeholder="Nombre del producto" />
+          </div>
+          <div className="form-grid2">
+            <div>
+              <label className="form-label">Precio Minorista</label>
+              <input className="form-input" type="number" min="0" value={form.retail} onChange={e=>set('retail',e.target.value)} />
+            </div>
+            <div>
+              <label className="form-label">Precio Mayorista</label>
+              <input className="form-input" type="number" min="0" value={form.mayor} onChange={e=>set('mayor',e.target.value)} />
+            </div>
+          </div>
+          <div className="form-grid2">
+            <div>
+              <label className="form-label">Stock</label>
+              <input className="form-input" type="number" min="0" value={form.stock} onChange={e=>set('stock',e.target.value)} />
+            </div>
+            <div>
+              <label className="form-label">Categoría</label>
+              <select className="form-input" value={form.brand} onChange={e=>set('brand',e.target.value)}>
+                <option value="helados">Helados</option>
+                <option value="hielo">Hielo</option>
+              </select>
+            </div>
+          </div>
+          <div className="form-row">
+            <label className="form-label">Foto</label>
+            <div className="form-photo-area" onClick={()=>fileRef.current.click()}>
+              {form.photo
+                ? <img src={form.photo} alt="" className="form-photo-preview" />
+                : <div style={{color:'var(--gray-3)',fontSize:13,padding:'10px 0'}}>📷 Subir foto</div>}
+              <div style={{fontSize:11,color:'var(--gray-3)',marginTop:4}}>JPG, PNG · se guarda en el CSV</div>
+            </div>
+            <input type="file" accept="image/*" ref={fileRef} style={{display:'none'}} onChange={handlePhoto} />
+            {form.photo && (
+              <button style={{marginTop:6,fontSize:12,color:'var(--danger)',background:'none',border:'none',cursor:'pointer',padding:0}}
+                onClick={()=>set('photo','')}>✕ Quitar foto</button>
+            )}
+          </div>
+        </div>
+        <div className="form-footer">
+          <button className="form-cancel-btn" onClick={onCancel}>Cancelar</button>
+          <button className="form-save-btn" onClick={submit}>Guardar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdminPanel({ products, serverMode, onClose, onUpdate }) {
+  const [editId, setEditId] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  function notify() { setSaved(true); setTimeout(()=>setSaved(false), 2000); }
+
+  function handleEdit(updated) {
+    onUpdate(products.map(p=>p.id===updated.id?updated:p));
+    setEditId(null); notify();
+  }
+  function handleAdd(product) {
+    if (products.find(p=>p.id===product.id)) { alert(`Ya existe un producto con código ${product.id}.`); return; }
+    onUpdate([...products, product]);
+    setAdding(false); notify();
+  }
+  function handleDelete(id) {
+    if (!confirm(`¿Eliminar el producto ${id}?`)) return;
+    onUpdate(products.filter(p=>p.id!==id)); notify();
+  }
+
+  return (
+    <div className="admin-overlay">
+      <div className="admin-top">
+        <div className="admin-top-title">⚙️ Administrador · {products.length} productos</div>
+        <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
+          {!serverMode && <span style={{fontSize:11,color:'#FCD34D',fontWeight:600}}>Sin servidor</span>}
+          {saved && <span style={{fontSize:12,color:'#86EFAC',fontWeight:600}}>✓ Guardado</span>}
+          <button className="admin-close" onClick={onClose}>✕</button>
+        </div>
+      </div>
+      <div className="admin-body">
+        {!serverMode && (
+          <div style={{background:'#FEF3C7',border:'1.5px solid #FCD34D',borderRadius:6,padding:'10px 12px',marginBottom:16,fontSize:13,color:'#92400E'}}>
+            ⚠️ Servidor no detectado. Los cambios no se guardarán en el CSV. Ejecutá <code>node server.js</code> para activar el modo persistente.
+          </div>
+        )}
+        <button className="admin-add-btn" onClick={()=>setAdding(true)}>+ Agregar producto</button>
+        {products.map(p=>(
+          <div className="admin-prod-row" key={p.id}>
+            <div className="admin-prod-img">
+              {p.photo
+                ? <img src={p.photo} alt="" />
+                : <span style={{fontSize:20}}>{p.brand==='hielo'?'🧊':'🍦'}</span>}
+            </div>
+            <div className="admin-prod-info">
+              <div className="admin-prod-code">{p.id}</div>
+              <div className="admin-prod-name">{p.name}</div>
+              <div className="admin-prod-prices">Min: {fmtARS(p.retail)} · May: {fmtARS(p.mayor)} · Stock: {p.stock}</div>
+            </div>
+            <div className="admin-prod-actions">
+              <button className="admin-action-btn" onClick={()=>setEditId(p.id)}>Editar</button>
+              <button className="admin-action-btn danger" onClick={()=>handleDelete(p.id)}>🗑</button>
+            </div>
+          </div>
+        ))}
+      </div>
+      {editId && <ProductForm product={products.find(p=>p.id===editId)} onSave={handleEdit} onCancel={()=>setEditId(null)} />}
+      {adding && <ProductForm product={null} onSave={handleAdd} onCancel={()=>setAdding(false)} />}
+    </div>
+  );
+}
+
 function App() {
-  const [mode, setMode] = useState("minorista");
+  const [products, setProducts] = useState([]);
+  const [serverMode, setServerMode] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [mode] = useState("minorista");
   const [brand, setBrand] = useState("todos");
   const [quantities, setQuantities] = useState({});
   const [cartOpen, setCartOpen] = useState(false);
   const [showPin, setShowPin] = useState(()=>window.location.hash==="#admin");
+  const [showAdmin, setShowAdmin] = useState(false);
 
-  function getPrice(p) { return mode==="mayorista" ? p.mayor : p.retail; }
+  useEffect(()=>{
+    fetch('/products.csv')
+      .then(r=>{ if(!r.ok) throw new Error(); return r.text(); })
+      .then(text=>{ const p=parseCSV(text); setProducts(p.length?p:DEFAULT_PRODUCTS); setServerMode(true); })
+      .catch(()=>setProducts(DEFAULT_PRODUCTS))
+      .finally(()=>setLoading(false));
+  },[]);
+
+  function updateProducts(next) { setProducts(next); if(serverMode) saveToServer(next); }
+
+  function getPrice(p) { return mode==="mayorista"?p.mayor:p.retail; }
   function add(id) {
-    const p = ALL_PRODUCTS.find(x=>x.id===id);
-    if (!p || (quantities[id]||0)>=p.stock) return;
+    const p=products.find(x=>x.id===id);
+    if(!p||(quantities[id]||0)>=p.stock) return;
     setQuantities(q=>({...q,[id]:(q[id]||0)+1}));
   }
   function remove(id) { setQuantities(q=>({...q,[id]:Math.max((q[id]||0)-1,0)})); }
   function removeAll(id) { setQuantities(q=>({...q,[id]:0})); }
 
   const filtered = useMemo(()=>{
-    if (brand==="todos") return ALL_PRODUCTS;
-    if (brand==="hielo") return ALL_PRODUCTS.filter(p=>p.brand==="hielo");
-    if (brand==="helados") return ALL_PRODUCTS.filter(p=>p.brand!=="hielo");
-    return ALL_PRODUCTS;
-  },[brand]);
-  const cart = useMemo(()=>ALL_PRODUCTS.filter(p=>(quantities[p.id]||0)>0).map(p=>({product:p,qty:quantities[p.id],price:getPrice(p)})),[quantities,mode]);
+    if(brand==="todos") return products;
+    if(brand==="hielo") return products.filter(p=>p.brand==="hielo");
+    if(brand==="helados") return products.filter(p=>p.brand!=="hielo");
+    return products;
+  },[brand,products]);
+
+  const cart = useMemo(()=>
+    products.filter(p=>(quantities[p.id]||0)>0).map(p=>({product:p,qty:quantities[p.id],price:getPrice(p)}))
+  ,[quantities,mode,products]);
+
   const totalItems = cart.reduce((s,i)=>s+i.qty,0);
   const totalPrice = cart.reduce((s,i)=>s+i.price*i.qty,0);
 
-  // Group by brand for "todos" view
   const grouped = useMemo(()=>{
-    if (brand !== "todos") return [{ brandId: brand, items: filtered }];
+    if(brand!=="todos") return [{brandId:brand,items:filtered}];
     return [
-      { brandId: "hielo", items: ALL_PRODUCTS.filter(p=>p.brand==="hielo") },
-      { brandId: "helados", items: ALL_PRODUCTS.filter(p=>p.brand!=="hielo") },
+      {brandId:"hielo",items:products.filter(p=>p.brand==="hielo")},
+      {brandId:"helados",items:products.filter(p=>p.brand!=="hielo")},
     ];
-  },[filtered, brand]);
+  },[filtered,brand,products]);
 
-  const brandLabel = { hielo:"Hielo", helados:"Helados" };
+  const brandLabel = {hielo:"Hielo",helados:"Helados"};
+
+  if(loading) return (
+    <div style={{minHeight:'100dvh',display:'flex',alignItems:'center',justifyContent:'center',background:'var(--navy)'}}>
+      <div style={{color:'rgba(255,255,255,.6)',fontSize:14,fontWeight:600}}>Cargando catálogo…</div>
+    </div>
+  );
 
   return (
     <>
-      {/* HERO */}
       <section className="hero">
         <div className="hero-noise" />
         <div className="hero-frost" />
@@ -539,28 +797,24 @@ function App() {
         <div className="hero-tagline fade-up fade-up-1">Precios minoristas · Saladillo</div>
       </section>
 
-      {/* STICKY HEADER */}
       <div className="sticky-header">
         <img src="logo.png" alt="Hielo Saladillo" className="sticky-logo" />
         <div className="header-right">
-
           <button className="cart-btn" onClick={()=>setCartOpen(true)}>
-            🛒 {totalItems>0&&<span className="cart-badge">{totalItems}</span>}
+            🛒{totalItems>0&&<span className="cart-badge">{totalItems}</span>}
           </button>
         </div>
       </div>
 
-      {/* CATALOG */}
       <section className="catalog" id="catalog">
         <div className="brand-tabs">
           {BRANDS.map(b=>(
             <button key={b.id} className={`brand-tab ${brand===b.id?"active":""}`} onClick={()=>setBrand(b.id)}>{b.label}</button>
           ))}
         </div>
-
-        {grouped.map(({ brandId, items }) => (
+        {grouped.map(({brandId,items})=>(
           <div key={brandId}>
-            {brand === "todos" && (
+            {brand==="todos" && (
               <div className="brand-header">
                 <div className="brand-name">{brandLabel[brandId]||brandId}</div>
                 <div className="brand-count">{items.length} productos</div>
@@ -572,12 +826,11 @@ function App() {
                   onAdd={()=>add(p.id)} onRemove={()=>remove(p.id)} mode={mode} />
               ))}
             </div>
-            {brand === "todos" && <div className="brand-divider" />}
+            {brand==="todos" && <div className="brand-divider" />}
           </div>
         ))}
       </section>
 
-      {/* CONTACT */}
       <section className="contact-section">
         <div className="contact-inner">
           <div className="contact-bottom-text">
@@ -591,17 +844,13 @@ function App() {
             </a>
           </div>
           <div className="map-wrap">
-            <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3243.1468099406948!2d-59.768086324040574!3d-35.624107112101804!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95bde0b8a7aaec4b%3A0x18aeb0bbceed33af!2sEmiliano%20Reynoso%203296%2C%20Saladillo%2C%20Provincia%20de%20Buenos%20Aires!5e0!3m2!1ses!2sar!4v1777384130146!5m2!1ses!2sar"
-              loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen
-            />
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3243.1468099406948!2d-59.768086324040574!3d-35.624107112101804!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95bde0b8a7aaec4b%3A0x18aeb0bbceed33af!2sEmiliano%20Reynoso%203296%2C%20Saladillo%2C%20Provincia%20de%20Buenos%20Aires!5e0!3m2!1ses!2sar!4v1777384130146!5m2!1ses!2sar"
+              loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen />
           </div>
         </div>
-
         <div className="contact-footer">© {new Date().getFullYear()} Hielo Saladillo · Saladillo, Buenos Aires</div>
       </section>
 
-      {/* BOTTOM BAR */}
       <div className={`bottom-bar ${totalItems===0?"hidden":""}`} onClick={()=>setCartOpen(true)}>
         <div className="bottom-bar-left">
           <div className="bottom-bar-items">{totalItems} producto{totalItems!==1?"s":""}</div>
@@ -611,12 +860,16 @@ function App() {
       </div>
 
       <CartDrawer open={cartOpen} onClose={()=>setCartOpen(false)} cart={cart} mode={mode}
-        onRemove={removeAll}
-        onSend={()=>{ setQuantities({}); setCartOpen(false); }} />
+        onRemove={removeAll} onSend={()=>{ setQuantities({}); setCartOpen(false); }} />
+
+      {showAdmin && (
+        <AdminPanel products={products} serverMode={serverMode}
+          onClose={()=>setShowAdmin(false)} onUpdate={updateProducts} />
+      )}
 
       {showPin && (
         <PinModal
-          onSuccess={()=>{ setShowPin(false); window.location.href="index.html#admin"; }}
+          onSuccess={()=>{ setShowPin(false); setShowAdmin(true); window.location.hash=""; }}
           onCancel={()=>{ setShowPin(false); window.location.hash=""; }}
         />
       )}
