@@ -10,7 +10,11 @@
       "Bash(rm inject.js current_source.jsx)",
       "Bash(git stash *)",
       "Bash(rm inject.js new_source.jsx)",
-      "Bash(awk '{print $5, $9}')"
+      "Bash(awk '{print $5, $9}')",
+      "Bash(npm show *)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\m-ton\\.claude\\projects\\c--Users-m-ton-Desktop-hielo-saladillo\\memory"
     ]
   }
 }

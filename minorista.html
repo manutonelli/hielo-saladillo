@@ -333,15 +333,21 @@ const ADMIN_PIN = "2148";
 
 function fmtARS(n) { return "$" + Number(n).toLocaleString("es-AR"); }
 
-// ─── CSV UTILITIES ───────────────────────────────────────────────────────────
 async function saveToServer(products) {
   try {
-    await fetch('/api/products', {
+    const r = await fetch('/api/products', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-admin-pin': ADMIN_PIN },
       body: JSON.stringify(products),
     });
-  } catch {}
+    if (!r.ok) {
+      const body = await r.json().catch(() => ({}));
+      return { ok: false, error: body.error || `Error ${r.status}` };
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.message || 'Sin conexión' };
+  }
 }
 
 // ─── DEFAULT PRODUCTS (fallback when no server) ──────────────────────────────
@@ -643,21 +649,31 @@ function AdminPanel({ products, serverMode, onClose, onUpdate }) {
   const [editId, setEditId] = useState(null);
   const [adding, setAdding] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState(null);
 
-  function notify() { setSaved(true); setTimeout(()=>setSaved(false), 2000); }
+  function notify(result) {
+    if (!result || result.ok) {
+      setSaveError(null); setSaved(true);
+      setTimeout(()=>setSaved(false), 2500);
+    } else {
+      setSaved(false);
+      setSaveError(result.error || 'Error al guardar');
+      setTimeout(()=>setSaveError(null), 5000);
+    }
+  }
 
   function handleEdit(updated) {
-    onUpdate(products.map(p=>p.id===updated.id?updated:p));
-    setEditId(null); notify();
+    onUpdate(products.map(p=>p.id===updated.id?updated:p), notify);
+    setEditId(null);
   }
   function handleAdd(product) {
     if (products.find(p=>p.id===product.id)) { alert(`Ya existe un producto con código ${product.id}.`); return; }
-    onUpdate([...products, product]);
-    setAdding(false); notify();
+    onUpdate([...products, product], notify);
+    setAdding(false);
   }
   function handleDelete(id) {
     if (!confirm(`¿Eliminar el producto ${id}?`)) return;
-    onUpdate(products.filter(p=>p.id!==id)); notify();
+    onUpdate(products.filter(p=>p.id!==id), notify);
   }
 
   return (
@@ -667,6 +683,7 @@ function AdminPanel({ products, serverMode, onClose, onUpdate }) {
         <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
           {!serverMode && <span style={{fontSize:11,color:'#FCD34D',fontWeight:600}}>Sin servidor</span>}
           {saved && <span style={{fontSize:12,color:'#86EFAC',fontWeight:600}}>✓ Guardado</span>}
+          {saveError && <span style={{fontSize:12,color:'#FCA5A5',fontWeight:600}}>✗ {saveError}</span>}
           <button className="admin-close" onClick={onClose}>✕</button>
         </div>
       </div>
@@ -721,7 +738,10 @@ function App() {
       .finally(()=>setLoading(false));
   },[]);
 
-  function updateProducts(next) { setProducts(next); if(serverMode) saveToServer(next); }
+  async function updateProducts(next, onResult) {
+    setProducts(next);
+    if (serverMode) { const r = await saveToServer(next); if (onResult) onResult(r); }
+  }
 
   function getPrice(p) { return mode==="mayorista"?p.mayor:p.retail; }
   function add(id) {

@@ -39,6 +39,7 @@ module.exports = async (req, res) => {
         access: 'public',
         contentType: 'application/json',
         addRandomSuffix: false,
+        allowOverwrite: true,
       });
       return res.status(200).json({ ok: true });
     } catch (e) {
