@@ -730,6 +730,12 @@ function App() {
   const [showAdmin, setShowAdmin] = useState(false);
 
   useEffect(()=>{
+    const onHash = () => { if (window.location.hash === '#admin') setShowPin(true); };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  useEffect(()=>{
     fetch('/api/products')
       .then(r=>{ if(!r.ok) throw new Error(); return r.json(); })
       .then(data=>{ setProducts(data&&data.length?data:DEFAULT_PRODUCTS); setServerMode(true); })
