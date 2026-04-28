@@ -1,4 +1,4 @@
-const { put, list, download } = require('@vercel/blob');
+const { put, list } = require('@vercel/blob');
 
 const BLOB_KEY = 'hs-products.json';
 const ADMIN_PIN = process.env.ADMIN_PIN || '2148';
@@ -12,15 +12,20 @@ module.exports = async (req, res) => {
 
   // GET — devuelve los productos guardados (o null si todavía no hay nada)
   if (req.method === 'GET') {
+    res.setHeader('Cache-Control', 'no-store');
     try {
       const { blobs } = await list({ prefix: BLOB_KEY, limit: 1 });
       if (blobs.length > 0) {
-        const r = await download(blobs[0].url);
+        const r = await fetch(blobs[0].url, {
+          headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+        });
+        if (!r.ok) return res.status(502).json({ error: `Blob ${r.status}` });
         const products = await r.json();
-        res.setHeader('Cache-Control', 'no-store');
         return res.status(200).json(products);
       }
-    } catch {}
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
     return res.status(200).json(null);
   }
 
