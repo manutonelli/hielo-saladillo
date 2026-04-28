@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -oE \".{0,30}admin.{0,30}\" /c/Users/m-ton/Desktop/hielo-saladillo/index.html)",
+      "Bash(grep -oE \".{0,40}admin-tab.{0,40}\" /c/Users/m-ton/Desktop/hielo-saladillo/index.html)",
+      "Bash(grep -oE \".{0,40}[Cc]sv.{0,40}\" /c/Users/m-ton/Desktop/hielo-saladillo/index.html)",
+      "Bash(node -e ' *)",
+      "Bash(node inject.js)",
+      "Bash(git checkout *)",
+      "Bash(rm inject.js current_source.jsx)"
+    ]
+  }
+}

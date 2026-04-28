@@ -1,0 +1,14 @@
+codigo,nombre,precio,precio_mayorista,stock
+H03,Hielo Bolsa 3 kg,1500,1200,50
+H05,Hielo Bolsa 5 kg,2200,1800,40
+H10,Hielo Bolsa 10 kg,3800,3200,30
+H15,Hielo Bolsa 15 kg,5500,4600,20
+HSE,Hielo Seco 1 kg,3200,2700,10
+PD12,Palito Durazno Caja x12,4800,4100,25
+PF12,Palito Frutilla Caja x12,4800,4100,20
+CH24,Chupete Surtido Caja x24,7200,6100,15
+HCH,Helado Chocolate Pote 1 L,3200,2700,18
+HVA,Helado Vainilla Pote 1 L,3200,2700,18
+EMP,Empanadas Congeladas x12,5500,4600,30
+PAP,Papas Fritas Congeladas 1 kg,2800,2300,25
+HAM,Hamburguesas Congeladas x6,4200,3500,20
