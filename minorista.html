@@ -334,51 +334,14 @@ const ADMIN_PIN = "2148";
 function fmtARS(n) { return "$" + Number(n).toLocaleString("es-AR"); }
 
 // ─── CSV UTILITIES ───────────────────────────────────────────────────────────
-function parseCSVLine(line) {
-  const fields = []; let cur = '', inQ = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (inQ) {
-      if (c==='"' && line[i+1]==='"') { cur+='"'; i++; }
-      else if (c==='"') { inQ=false; }
-      else { cur+=c; }
-    } else {
-      if (c==='"') { inQ=true; }
-      else if (c===',') { fields.push(cur); cur=''; }
-      else { cur+=c; }
-    }
-  }
-  fields.push(cur);
-  return fields;
-}
-
-function parseCSV(text) {
-  const lines = text.trim().replace(/\r\n/g,'\n').split('\n');
-  return lines.slice(1).filter(l=>l.trim()).map(line=>{
-    const f = parseCSVLine(line);
-    return {
-      id: f[0]||'', name: f[1]||'',
-      retail: parseInt(f[2])||0, mayor: parseInt(f[3])||0,
-      stock: f[4]!==undefined && f[4]!=='' ? parseInt(f[4]) : 99,
-      brand: f[5]||'helados', photo: f[8]||'',
-    };
-  }).filter(p=>p.id);
-}
-
-function serializeCSV(products) {
-  function esc(v) {
-    const s = v==null?'':String(v);
-    return (s.includes(',')||s.includes('"')||s.includes('\n'))
-      ? '"'+s.replace(/"/g,'""')+'"' : s;
-  }
-  const hdr = 'codigo,nombre,precio_minorista,precio_mayorista,stock,categoria,desc,visible,foto';
-  return hdr+'\n'+products.map(p=>
-    [p.id,p.name,p.retail,p.mayor,p.stock,p.brand,'','true',p.photo||''].map(esc).join(',')
-  ).join('\n')+'\n';
-}
-
 async function saveToServer(products) {
-  try { await fetch('/products.csv',{method:'POST',body:serializeCSV(products)}); } catch{}
+  try {
+    await fetch('/api/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-pin': ADMIN_PIN },
+      body: JSON.stringify(products),
+    });
+  } catch {}
 }
 
 // ─── DEFAULT PRODUCTS (fallback when no server) ──────────────────────────────
@@ -590,7 +553,19 @@ function ProductForm({ product, onSave, onCancel }) {
   function handlePhoto(e) {
     const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader();
-    reader.onload = ev => set('photo', ev.target.result);
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 500;
+        const ratio = Math.min(MAX / img.width, MAX / img.height, 1);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * ratio);
+        canvas.height = Math.round(img.height * ratio);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        set('photo', canvas.toDataURL('image/jpeg', 0.8));
+      };
+      img.src = ev.target.result;
+    };
     reader.readAsDataURL(file);
   }
 
@@ -739,9 +714,9 @@ function App() {
   const [showAdmin, setShowAdmin] = useState(false);
 
   useEffect(()=>{
-    fetch('/products.csv')
-      .then(r=>{ if(!r.ok) throw new Error(); return r.text(); })
-      .then(text=>{ const p=parseCSV(text); setProducts(p.length?p:DEFAULT_PRODUCTS); setServerMode(true); })
+    fetch('/api/products')
+      .then(r=>{ if(!r.ok) throw new Error(); return r.json(); })
+      .then(data=>{ setProducts(data&&data.length?data:DEFAULT_PRODUCTS); setServerMode(true); })
       .catch(()=>setProducts(DEFAULT_PRODUCTS))
       .finally(()=>setLoading(false));
   },[]);
