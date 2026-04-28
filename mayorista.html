@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hielo Saladillo — Mayorista</title>
+  <link rel="icon" type="image/png" href="logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:    #0B0F2E;
+      --navy2:   #161A45;
+      --ice:     #7DD3F0;
+      --ice-lt:  #E8F7FD;
+      --white:   #FAFCFF;
+      --gray-1:  #F3F5F9;
+      --gray-2:  #DDE3EE;
+      --gray-3:  #9AA3BA;
+      --text:    #0B0F2E;
+      --success: #22C55E;
+      --danger:  #EF4444;
+      --display: 'Plus Jakarta Sans', sans-serif;
+      --body:    'Plus Jakarta Sans', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--body); background: var(--white); color: var(--text); overflow-x: hidden; }
+    #root { min-height: 100dvh; display: flex; flex-direction: column; }
+
+    /* ─── HERO ─── */
+    .hero {
+      position: relative; background: var(--navy);
+      padding: 24px 20px 28px; overflow: hidden;
+      display: flex; flex-direction: column; justify-content: flex-end;
+    }
+    .hero-noise {
+      position: absolute; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E");
+      opacity: 0.5; pointer-events: none;
+    }
+    .hero-frost {
+      position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(ellipse 80% 60% at 110% 20%, rgba(125,211,240,0.18) 0%, transparent 70%),
+                  radial-gradient(ellipse 50% 50% at -10% 80%, rgba(125,211,240,0.10) 0%, transparent 60%);
+    }
+    .hero-logo {
+      width: 110px; position: relative; z-index: 1;
+    }
+    .hero-tagline {
+      font-size: 13px; color: rgba(255,255,255,.5); font-weight: 500;
+      position: relative; z-index: 1; margin-top: 6px;
+    }
+    .hero-corner {
+      position: absolute; bottom: 0; right: 0;
+      font-size: 100px; line-height: 1; opacity: .04; pointer-events: none; user-select: none;
+    }
+
+    /* ─── STICKY HEADER (after hero) ─── */
+    .sticky-header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(250,252,255,0.92); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--gray-2);
+      padding: 0 20px; height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .sticky-logo { height: 32px; width: auto; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .mode-pill {
+      display: flex; background: var(--gray-1); border-radius: 6px;
+      border: 1px solid var(--gray-2); overflow: hidden;
+    }
+    .mode-pill button {
+      padding: 6px 12px; border: none; background: none; cursor: pointer;
+      font-family: var(--body); font-size: 12px; font-weight: 600; color: var(--gray-3);
+      transition: all .15s;
+    }
+    .mode-pill button.active { background: var(--navy); color: #fff; }
+    .cart-btn {
+      position: relative; width: 42px; height: 42px;
+      background: var(--navy); color: #fff; border: none; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; cursor: pointer; transition: background .15s, transform .1s;
+    }
+    .cart-btn:hover { background: var(--navy2); }
+    .cart-btn:active { transform: scale(.93); }
+    .cart-badge {
+      position: absolute; top: -5px; right: -5px;
+      background: var(--ice); color: var(--navy);
+      font-size: 10px; font-weight: 800;
+      width: 18px; height: 18px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      border: 2px solid var(--white);
+    }
+
+    /* ─── CATALOG ─── */
+    .catalog { flex: 1; padding: 24px 16px 140px; max-width: 540px; margin: 0 auto; width: 100%; }
+
+    .brand-tabs {
+      display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px;
+      margin-bottom: 28px; scrollbar-width: none;
+    }
+    .brand-tabs::-webkit-scrollbar { display: none; }
+    .brand-tab {
+      flex-shrink: 0; padding: 7px 14px; border: 1.5px solid var(--gray-2); border-radius: 4px;
+      background: var(--white); font-family: var(--body); font-size: 13px; font-weight: 600;
+      color: var(--gray-3); cursor: pointer; white-space: nowrap; transition: all .15s;
+    }
+    .brand-tab.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+    .brand-tab:not(.active):hover { border-color: var(--navy); color: var(--navy); }
+
+    .brand-header {
+      display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px;
+    }
+    .brand-name { font-family: var(--display); font-size: 20px; font-weight: 800; color: var(--text); }
+    .brand-count { font-size: 12px; color: var(--gray-3); font-weight: 500; }
+    .brand-divider { height: 1px; background: var(--gray-2); margin-bottom: 28px; }
+
+    /* ─── PRODUCT CARD ─── */
+    .products { display: flex; flex-direction: column; gap: 1px; margin-bottom: 0; }
+    .product-row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 0; border-bottom: 1px solid var(--gray-2);
+      transition: background .1s;
+    }
+    .product-row:last-child { border-bottom: none; }
+    .product-row.in-cart .prod-name { color: var(--navy); }
+    .product-row.out-of-stock { opacity: .45; }
+    .prod-img {
+      width: 56px; height: 56px; border-radius: 4px; flex-shrink: 0;
+      background: var(--ice-lt); overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; position: relative;
+    }
+    .prod-img img { width: 100%; height: 100%; object-fit: cover; }
+    .prod-img-ph {
+      width: 100%; height: 100%; position: absolute; inset: 0;
+      background: repeating-linear-gradient(
+        -45deg, var(--ice-lt) 0px, var(--ice-lt) 5px, var(--gray-2) 5px, var(--gray-2) 10px
+      );
+    }
+    .prod-info { flex: 1; min-width: 0; }
+    .prod-name { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.3; margin-bottom: 4px; text-wrap: balance; }
+    .prod-price { font-family: var(--display); font-size: 16px; font-weight: 800; color: var(--navy); }
+    .prod-stock { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 3px; margin-top: 4px; }
+    .prod-stock.ok { background: #DCFCE7; color: #15803D; }
+    .prod-stock.low { background: #FEF9C3; color: #A16207; }
+    .prod-stock.none { background: #FEE2E2; color: #B91C1C; }
+    .qty-ctrl { display: flex; align-items: center; gap: 0; flex-shrink: 0; }
+    .qty-btn {
+      width: 30px; height: 30px; border: 1.5px solid var(--gray-2);
+      background: var(--white); cursor: pointer; font-size: 16px; font-weight: 700;
+      font-family: var(--body); display: flex; align-items: center; justify-content: center;
+      transition: all .1s; color: var(--text);
+    }
+    .qty-btn:first-child { border-radius: 4px 0 0 4px; }
+    .qty-btn:last-child { border-radius: 0 4px 4px 0; background: var(--navy); color: #fff; border-color: var(--navy); }
+    .qty-btn:first-child:hover:not(:disabled) { background: var(--gray-1); }
+    .qty-btn:last-child:hover:not(:disabled) { background: var(--navy2); }
+    .qty-btn:disabled { opacity: .3; cursor: not-allowed; }
+    .qty-num {
+      width: 34px; height: 30px; border-top: 1.5px solid var(--gray-2); border-bottom: 1.5px solid var(--gray-2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; color: var(--text); background: #fff;
+    }
+
+    /* ─── STICKY BOTTOM BAR ─── */
+    .bottom-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 99;
+      background: var(--navy); color: #fff;
+      padding: 0 16px; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; transition: transform .25s, opacity .25s;
+      box-shadow: 0 -4px 24px rgba(11,15,46,0.25);
+    }
+    .bottom-bar.hidden { transform: translateY(80px); opacity: 0; pointer-events: none; }
+    .bottom-bar-left { display: flex; flex-direction: column; }
+    .bottom-bar-items { font-size: 13px; font-weight: 600; opacity: .7; }
+    .bottom-bar-price { font-family: var(--display); font-size: 20px; font-weight: 800; }
+    .bottom-bar-action {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--ice); color: var(--navy);
+      padding: 11px 18px; border-radius: 4px;
+      font-family: var(--display); font-size: 14px; font-weight: 800;
+    }
+
+    /* ─── CONTACT SECTION ─── */
+    .contact-section {
+      background: var(--navy); color: #fff;
+      padding: 48px 24px 60px;
+    }
+    .contact-inner {
+      max-width: 540px; margin: 0 auto;
+      display: flex; align-items: flex-start; gap: 28px; flex-wrap: wrap;
+    }
+    .contact-bottom-text { flex: 1; min-width: 200px; }
+    .contact-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--ice); margin-bottom: 10px; }
+    .contact-title { font-family: var(--display); font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+    .contact-sub { font-size: 14px; opacity: .55; margin-bottom: 16px; line-height: 1.6; }
+    .contact-address { font-size: 14px; color: rgba(255,255,255,.45); margin-bottom: 16px; display: flex; align-items: center; gap: 6px; }
+    .wa-link {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: #25D366; color: #fff;
+      padding: 16px 28px; border-radius: 4px;
+      font-family: var(--display); font-size: 16px; font-weight: 800;
+      text-decoration: none; transition: background .15s, transform .1s;
+    }
+    .wa-link:hover { background: #1DB954; }
+    .wa-link:active { transform: scale(.97); }
+    .map-wrap {
+      width: 200px; height: 180px; flex-shrink: 0;
+      overflow: hidden; border-radius: 8px;
+    }
+    .map-wrap iframe { width: 100%; height: 100%; border: 0; display: block; }
+    .contact-footer { margin-top: 32px; font-size: 12px; opacity: .3; }
+
+    /* ─── CART DRAWER ─── */
+    .overlay { position: fixed; inset: 0; background: rgba(11,15,46,0.5); z-index: 200; opacity: 0; pointer-events: none; transition: opacity .22s; }
+    .overlay.open { opacity: 1; pointer-events: all; }
+    .cart-drawer {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%) translateY(100%);
+      width: 100%; max-width: 540px; background: var(--white);
+      border-radius: 16px 16px 0 0; z-index: 201;
+      max-height: 92dvh; display: flex; flex-direction: column;
+      transition: transform .28s cubic-bezier(.4,0,.2,1);
+      box-shadow: 0 -8px 40px rgba(11,15,46,0.2);
+    }
+    .cart-drawer.open { transform: translateX(-50%) translateY(0); }
+    .drawer-handle { width: 36px; height: 4px; background: var(--gray-2); border-radius: 2px; margin: 12px auto 0; }
+    .drawer-header { padding: 14px 20px 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--gray-1); flex-shrink: 0; }
+    .drawer-title { font-family: var(--display); font-size: 18px; font-weight: 800; }
+    .drawer-close { width: 30px; height: 30px; border: 1.5px solid var(--gray-2); border-radius: 4px; background: var(--white); cursor: pointer; font-size: 14px; color: var(--gray-3); display: flex; align-items: center; justify-content: center; }
+    .drawer-body { overflow-y: auto; flex: 1; padding: 8px 20px; }
+    .drawer-empty { text-align: center; padding: 48px 20px; color: var(--gray-3); }
+    .cart-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--gray-1); }
+    .cart-item:last-child { border-bottom: none; }
+    .ci-img { width: 44px; height: 44px; background: var(--ice-lt); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; overflow: hidden; }
+    .ci-img img { width: 100%; height: 100%; object-fit: cover; }
+    .ci-info { flex: 1; }
+    .ci-name { font-size: 13px; font-weight: 600; line-height: 1.3; }
+    .ci-qty { font-size: 12px; color: var(--gray-3); margin-top: 2px; }
+    .ci-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+    .ci-price { font-family: var(--display); font-size: 15px; font-weight: 800; color: var(--navy); }
+    .ci-remove { background: none; border: none; cursor: pointer; font-size: 14px; color: var(--gray-3); padding: 0; line-height: 1; transition: color .15s; }
+    .ci-remove:hover { color: var(--danger); }
+    .drawer-footer { padding: 14px 20px 20px; flex-shrink: 0; border-top: 1px solid var(--gray-1); }
+    .total-rows { margin-bottom: 14px; }
+    .tr { display: flex; justify-content: space-between; font-size: 13px; color: var(--gray-3); font-weight: 500; padding: 2px 0; }
+    .tr.grand { font-family: var(--display); font-size: 20px; font-weight: 800; color: var(--navy); border-top: 1px solid var(--gray-2); padding-top: 10px; margin-top: 6px; }
+    .delivery-pills { display: flex; gap: 6px; margin-bottom: 12px; }
+    .del-pill { flex: 1; padding: 10px; border: 1.5px solid var(--gray-2); border-radius: 4px; background: var(--white); font-family: var(--body); font-size: 13px; font-weight: 600; color: var(--gray-3); cursor: pointer; transition: all .15s; text-align: center; }
+    .del-pill.active { border-color: var(--navy); color: var(--navy); background: var(--ice-lt); }
+    .name-field { width: 100%; padding: 10px 12px; border: 1.5px solid var(--gray-2); border-radius: 4px; font-family: var(--body); font-size: 14px; font-weight: 500; color: var(--text); outline: none; margin-bottom: 12px; transition: border-color .15s; }
+    .name-field:focus { border-color: var(--navy); }
+    .send-btn { width: 100%; padding: 16px; border: none; border-radius: 4px; background: #25D366; color: #fff; font-family: var(--display); font-size: 16px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: background .15s, transform .1s; box-shadow: 0 2px 12px rgba(37,211,102,0.35); }
+    .send-btn:hover { background: #1DB954; }
+    .send-btn:active { transform: scale(.98); }
+
+    /* ─── FADE IN ─── */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-up { animation: fadeUp .4s ease both; }
+    .fade-up-1 { animation-delay: .05s; }
+    .fade-up-2 { animation-delay: .12s; }
+    .fade-up-3 { animation-delay: .2s; }
+
+    /* PIN MODAL */
+    .modal-bd { position: fixed; inset: 0; background: rgba(11,15,46,0.6); z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .modal-box { background: #fff; border-radius: 12px; padding: 28px 24px; width: 100%; max-width: 320px; }
+    .modal-title { font-family: var(--display); font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+    .modal-sub { font-size: 13px; color: var(--gray-3); margin-bottom: 20px; }
+    .pin-in { width: 100%; padding: 14px; border-radius: 6px; border: 1.5px solid var(--gray-2); font-family: var(--body); font-size: 22px; font-weight: 700; text-align: center; letter-spacing: 6px; outline: none; margin-bottom: 12px; transition: border-color .15s; }
+    .pin-in:focus { border-color: var(--navy); }
+    .pin-err { font-size: 13px; color: var(--danger); font-weight: 600; text-align: center; margin-bottom: 10px; }
+    .mbtn { width: 100%; padding: 13px; border: none; border-radius: 6px; background: var(--navy); color: #fff; font-family: var(--display); font-size: 14px; font-weight: 800; cursor: pointer; margin-bottom: 8px; }
+    .mbtn.sec { background: var(--gray-1); color: var(--gray-3); }
+
+    @media (max-width: 400px) { .catalog { padding-inline: 12px; } }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useMemo, useRef, useEffect } = React;
+
+const WA_NUMBER = "5492345685143";
+const ADMIN_PIN = "2148";
+
+function fmtARS(n) { return "$" + Number(n).toLocaleString("es-AR"); }
+
+// ─── FULL PRODUCT CATALOG
+const ALL_PRODUCTS = [
+  // HIELO
+  { id:"H15", name:"Hielo Bolsa 15 kg", brand:"hielo", retail:9000, mayor:8000, stock:99 },
+  { id:"H03", name:"Hielo Bolsa 3 kg", brand:"hielo", retail:3500, mayor:2400, stock:99 },
+  // ACAPULCO
+  { id:"AC01", name:"Agua 2 Sabores Surtido Caja ×40", brand:"acapulco", retail:14260, mayor:11091, stock:99 },
+  { id:"AC02", name:"Palito Bombón Caja ×40", brand:"acapulco", retail:24785, mayor:19277, stock:99 },
+  { id:"AC03", name:"Cono Bola Americano Caja ×14", brand:"acapulco", retail:19183, mayor:14920, stock:99 },
+  { id:"AC04", name:"Cono Bola Chocolate Caja ×14", brand:"acapulco", retail:19183, mayor:14920, stock:99 },
+  { id:"AC05", name:"Cono Bola Dulce de Leche Caja ×14", brand:"acapulco", retail:19183, mayor:14920, stock:99 },
+  { id:"AC06", name:"Crocante Americano Caja ×14", brand:"acapulco", retail:19183, mayor:14920, stock:99 },
+  // DOLCE NEVE
+  { id:"DN01", name:"Frutales Surtidos Caja ×20", brand:"dolceneve", retail:9846, mayor:7658, stock:99 },
+  { id:"DN02", name:"Frutales Surtido Pack ×10", brand:"dolceneve", retail:6621, mayor:5149, stock:99 },
+  { id:"DN03", name:"Zombies Relleno Crema Americano Caja ×20", brand:"dolceneve", retail:14090, mayor:10959, stock:99 },
+  { id:"DN04", name:"Power Bots Surtido Caja ×24", brand:"dolceneve", retail:23087, mayor:17957, stock:99 },
+  { id:"DN05", name:"Carita Chocolate-Vainilla Caja ×30", brand:"dolceneve", retail:24615, mayor:19145, stock:99 },
+  { id:"DN06", name:"Carita Frutilla-Vainilla Caja ×30", brand:"dolceneve", retail:24615, mayor:19145, stock:99 },
+  { id:"DN07", name:"Sombrero Loco Chocolate-Americano Caja ×30", brand:"dolceneve", retail:24615, mayor:19145, stock:99 },
+  { id:"DN08", name:"Sombrero Loco Frutilla-Vainilla Caja ×30", brand:"dolceneve", retail:24615, mayor:19145, stock:99 },
+  { id:"DN09", name:"Gol Chocolate-Americano Caja ×30", brand:"dolceneve", retail:24615, mayor:19145, stock:99 },
+  { id:"DN10", name:"Granizado Dulce de Leche Caja ×30", brand:"dolceneve", retail:22239, mayor:17297, stock:99 },
+  { id:"DN11", name:"Granizado Americano Caja ×30", brand:"dolceneve", retail:22239, mayor:17297, stock:99 },
+  { id:"DN12", name:"Bombón Clásico Caja ×20", brand:"dolceneve", retail:18504, mayor:14392, stock:99 },
+  { id:"DN13", name:"Bombón Clásico Pack ×10", brand:"dolceneve", retail:10525, mayor:8186, stock:99 },
+  { id:"DN14", name:"Bombón Crocantino Caja ×12", brand:"dolceneve", retail:16637, mayor:12940, stock:99 },
+  { id:"DN15", name:"Bombón Piu Latte Caja ×12", brand:"dolceneve", retail:22234, mayor:17293, stock:99 },
+  { id:"DN16", name:"Bombón Piu Almendrado Caja ×12", brand:"dolceneve", retail:22234, mayor:17293, stock:99 },
+  { id:"DN17", name:"Bombón Piu Blanco Caja ×12", brand:"dolceneve", retail:22234, mayor:17293, stock:99 },
+  { id:"DN18", name:"Alfajor Helado Caja ×16", brand:"dolceneve", retail:24276, mayor:18881, stock:99 },
+  { id:"DN19", name:"Alfajor Helado Pack ×8", brand:"dolceneve", retail:13751, mayor:10695, stock:99 },
+  { id:"DN20", name:"Fiesta Chocolate-Vainilla Caja ×24", brand:"dolceneve", retail:20541, mayor:15976, stock:99 },
+  { id:"DN21", name:"Fiesta Chocolate-Frutilla Caja ×24", brand:"dolceneve", retail:20541, mayor:15976, stock:99 },
+  { id:"DN22", name:"Copa Cream Choc-Americano Caja ×12", brand:"dolceneve", retail:20541, mayor:15976, stock:99 },
+  { id:"DN23", name:"Copa Cream Frutilla-Americano Caja ×12", brand:"dolceneve", retail:20541, mayor:15976, stock:99 },
+  { id:"DN24", name:"Copa Cream Banana Split Caja ×12", brand:"dolceneve", retail:20541, mayor:15976, stock:99 },
+  { id:"DN25", name:"Cono Americano Caja ×14", brand:"dolceneve", retail:19183, mayor:14920, stock:99 },
+  { id:"DN26", name:"Cono Crocante Chocolate Caja ×14", brand:"dolceneve", retail:22069, mayor:17165, stock:99 },
+  { id:"DN27", name:"Cono Crocante Dulce de Leche Caja ×14", brand:"dolceneve", retail:22069, mayor:17165, stock:99 },
+  { id:"DN28", name:"Cono Crocante DL Pack ×6", brand:"dolceneve", retail:10696, mayor:8319, stock:99 },
+  { id:"DN29", name:"Ecco Granizado Caja ×14", brand:"dolceneve", retail:25634, mayor:19938, stock:99 },
+  { id:"DN30", name:"Ecco Granizado Dulce de Leche Caja ×14", brand:"dolceneve", retail:25634, mayor:19938, stock:99 },
+  { id:"DN31", name:"Ecco Blanco Caja ×14", brand:"dolceneve", retail:25634, mayor:19938, stock:99 },
+  { id:"DN32", name:"Ecco Negro Chocolate Caja ×14", brand:"dolceneve", retail:25634, mayor:19938, stock:99 },
+  // QUEEN RETAIL
+  { id:"QH01", name:"Torta Chocolate-DL con Pionono", brand:"queen", retail:12732, mayor:9903, stock:99 },
+  { id:"QH02", name:"Torta Americano-Frutilla con Pionono", brand:"queen", retail:12732, mayor:9903, stock:99 },
+  { id:"QH03", name:"Tableta Bloque Dulce de Leche Caja ×18", brand:"queen", retail:17316, mayor:13468, stock:99 },
+  { id:"QH04", name:"Tableta Bloque Americano Caja ×18", brand:"queen", retail:17316, mayor:13468, stock:99 },
+  { id:"QH05", name:"Barrita DL Queen Bar Pack ×12", brand:"queen", retail:13751, mayor:10695, stock:99 },
+  { id:"QH06", name:"Bombón Suizo Pack ×8", brand:"queen", retail:14940, mayor:11620, stock:99 },
+  { id:"QH07", name:"Postre Almendrado Pack ×8", brand:"queen", retail:9846, mayor:7658, stock:99 },
+  { id:"QH08", name:"Postre Tricolor Pack ×8", brand:"queen", retail:9846, mayor:7658, stock:99 },
+  { id:"QH09", name:"Bombón Escocés Blanco Pack ×8", brand:"queen", retail:14939, mayor:11619, stock:99 },
+  // QUEEN GASTRONOMIA
+  { id:"QG01", name:"Bombón Suizo Gastronomía Caja ×30", brand:"queen-gastro", retail:48382, mayor:37630, stock:99 },
+  { id:"QG02", name:"Postre Almendrado Gastronomía Caja ×30", brand:"queen-gastro", retail:30557, mayor:23767, stock:99 },
+  { id:"QG03", name:"Postre Napolitano Gastronomía Caja ×30", brand:"queen-gastro", retail:30557, mayor:23767, stock:99 },
+  { id:"QG04", name:"Bombón Escocés Negro Gastronomía Caja ×30", brand:"queen-gastro", retail:48382, mayor:37630, stock:99 },
+  { id:"QG05", name:"Bombón Escocés Blanco Gastronomía Caja ×30", brand:"queen-gastro", retail:48382, mayor:37630, stock:99 },
+  // GRANEL
+  { id:"HL01", name:"Helado a Granel Común 10 L", brand:"granel", retail:53305, mayor:41459, stock:99 },
+  { id:"HL02", name:"Helado a Granel Especial 10 L", brand:"granel", retail:63151, mayor:49118, stock:99 },
+];
+
+const BRANDS = [
+  { id:"todos",   label:"Todos" },
+  { id:"hielo",   label:"Hielo" },
+  { id:"helados", label:"Helados" },
+];
+
+function ProductRow({ product, qty, onAdd, onRemove, mode }) {
+  const price = mode === "mayorista" ? product.mayor : product.retail;
+  const out = product.stock <= 0;
+  const low = product.stock > 0 && product.stock <= 5;
+  return (
+    <div className={`product-row ${qty>0?"in-cart":""} ${out?"out-of-stock":""}`}>
+      <div className="prod-img">
+        <div className="prod-img-ph"></div>
+      </div>
+      <div className="prod-info">
+        <div className="prod-name">{product.name}</div>
+        <div className="prod-price">{fmtARS(price)}</div>
+        {out
+          ? <span className="prod-stock none">Sin stock</span>
+          : low
+            ? <span className="prod-stock low">Últimas {product.stock}</span>
+            : null}
+      </div>
+      <div className="qty-ctrl">
+        <button className="qty-btn" onClick={onRemove} disabled={qty===0} style={{opacity:qty===0?.35:1}}>−</button>
+        <div className="qty-num">{qty}</div>
+        <button className="qty-btn" onClick={onAdd} disabled={out||qty>=product.stock}>+</button>
+      </div>
+    </div>
+  );
+}
+
+function CartDrawer({ open, onClose, cart, mode, onSend, onRemove }) {
+  const [delivery, setDelivery] = useState("delivery");
+  const [name, setName] = useState("");
+  const [address, setAddress] = useState("");
+  const total = cart.reduce((s,i)=>s+i.price*i.qty, 0);
+
+  function handleSend() {
+    const lines = cart.map(i=>`• ${i.product.name} × ${i.qty} = ${fmtARS(i.price*i.qty)}`);
+    const msg = [
+      `*Pedido — Hielo Saladillo*`, ``,
+      name.trim() ? `*Nombre:* ${name.trim()}` : "",
+      `*Modalidad:* ${mode==="mayorista"?"MAYORISTA":"MINORISTA"}`,
+      `*Entrega:* ${delivery==="delivery"?"Delivery a domicilio":"Retiro en local"}`,
+      delivery==="delivery" && address.trim() ? `*Dirección:* ${address.trim()}` : "",
+      ``, `*Productos:*`, ...lines, ``,
+      `*TOTAL: ${fmtARS(total)}*`,
+    ].filter(x=>x!==undefined&&x!==false&&x!=="").join("\n");
+    window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`,"_blank");
+    onSend && onSend();
+  }
+
+  return (
+    <>
+      <div className={`overlay ${open?"open":""}`} onClick={onClose} />
+      <div className={`cart-drawer ${open?"open":""}`}>
+        <div className="drawer-handle" />
+        <div className="drawer-header">
+          <div className="drawer-title">Tu pedido</div>
+          <button className="drawer-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="drawer-body">
+          {cart.length === 0
+            ? <div className="drawer-empty"><div style={{fontSize:40,marginBottom:12}}>🛒</div><div style={{fontWeight:600}}>Carrito vacío</div></div>
+            : cart.map(i=>(
+              <div className="cart-item" key={i.product.id}>
+                <div className="ci-img"></div>
+                <div className="ci-info">
+                  <div className="ci-name">{i.product.name}</div>
+                  <div className="ci-qty">× {i.qty}</div>
+                </div>
+                <div className="ci-right">
+                  <div className="ci-price">{fmtARS(i.price*i.qty)}</div>
+                  <button className="ci-remove" onClick={()=>onRemove(i.product.id)} title="Quitar">🗑</button>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+        {cart.length > 0 && (
+          <div className="drawer-footer">
+            <div className="total-rows">
+              {cart.map(i=>(
+                <div className="tr" key={i.product.id}>
+                  <span>{i.product.name} ×{i.qty}</span><span>{fmtARS(i.price*i.qty)}</span>
+                </div>
+              ))}
+              <div className="tr grand"><span>Total</span><span>{fmtARS(total)}</span></div>
+            </div>
+            <label style={{fontSize:11,fontWeight:600,color:"var(--gray-3)",textTransform:"uppercase",letterSpacing:.8,display:"block",marginBottom:4}}>Tu nombre</label>
+            <input className="name-field" placeholder="Ej: Juan García" value={name} onChange={e=>setName(e.target.value)} />
+            <div className="delivery-pills">
+              <button className={`del-pill ${delivery==="delivery"?"active":""}`} onClick={()=>setDelivery("delivery")}>🚗 Delivery</button>
+              <button className={`del-pill ${delivery==="retiro"?"active":""}`} onClick={()=>setDelivery("retiro")}>🏪 Retiro</button>
+            </div>
+            {delivery==="delivery" && (
+              <>
+                <label style={{fontSize:11,fontWeight:600,color:"var(--gray-3)",textTransform:"uppercase",letterSpacing:.8,display:"block",marginBottom:4}}>Dirección de entrega</label>
+                <input className="name-field" placeholder="Calle, número, barrio..." value={address} onChange={e=>setAddress(e.target.value)} style={{marginBottom:12}} />
+              </>
+            )}
+            <button className="send-btn" onClick={handleSend}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              Enviar por WhatsApp
+            </button>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+function PinModal({ onSuccess, onCancel }) {
+  const [pin, setPin] = useState(""); const [err, setErr] = useState(false);
+  function submit() { if (pin===ADMIN_PIN) onSuccess(); else { setErr(true); setPin(""); } }
+  return (
+    <div className="modal-bd">
+      <div className="modal-box">
+        <div className="modal-title">🔒 Administrar</div>
+        <div className="modal-sub">Ingresá el PIN de acceso.</div>
+        {err && <div className="pin-err">PIN incorrecto.</div>}
+        <input className="pin-in" type="password" inputMode="numeric" maxLength={6} placeholder="••••"
+          value={pin} onChange={e=>{setPin(e.target.value);setErr(false);}} onKeyDown={e=>e.key==="Enter"&&submit()} autoFocus />
+        <button className="mbtn" onClick={submit}>Ingresar</button>
+        <button className="mbtn sec" onClick={onCancel}>Cancelar</button>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [mode, setMode] = useState("mayorista");
+  const [brand, setBrand] = useState("todos");
+  const [quantities, setQuantities] = useState({});
+  const [cartOpen, setCartOpen] = useState(false);
+  const [showPin, setShowPin] = useState(()=>window.location.hash==="#admin");
+
+  function getPrice(p) { return mode==="mayorista" ? p.mayor : p.retail; }
+  function add(id) {
+    const p = ALL_PRODUCTS.find(x=>x.id===id);
+    if (!p || (quantities[id]||0)>=p.stock) return;
+    setQuantities(q=>({...q,[id]:(q[id]||0)+1}));
+  }
+  function remove(id) { setQuantities(q=>({...q,[id]:Math.max((q[id]||0)-1,0)})); }
+  function removeAll(id) { setQuantities(q=>({...q,[id]:0})); }
+
+  const filtered = useMemo(()=>{
+    if (brand==="todos") return ALL_PRODUCTS;
+    if (brand==="hielo") return ALL_PRODUCTS.filter(p=>p.brand==="hielo");
+    if (brand==="helados") return ALL_PRODUCTS.filter(p=>p.brand!=="hielo");
+    return ALL_PRODUCTS;
+  },[brand]);
+  const cart = useMemo(()=>ALL_PRODUCTS.filter(p=>(quantities[p.id]||0)>0).map(p=>({product:p,qty:quantities[p.id],price:getPrice(p)})),[quantities,mode]);
+  const totalItems = cart.reduce((s,i)=>s+i.qty,0);
+  const totalPrice = cart.reduce((s,i)=>s+i.price*i.qty,0);
+
+  // Group by brand for "todos" view
+  const grouped = useMemo(()=>{
+    if (brand !== "todos") return [{ brandId: brand, items: filtered }];
+    return [
+      { brandId: "hielo", items: ALL_PRODUCTS.filter(p=>p.brand==="hielo") },
+      { brandId: "helados", items: ALL_PRODUCTS.filter(p=>p.brand!=="hielo") },
+    ];
+  },[filtered, brand]);
+
+  const brandLabel = { hielo:"Hielo", helados:"Helados" };
+
+  return (
+    <>
+      {/* HERO */}
+      <section className="hero">
+        <div className="hero-noise" />
+        <div className="hero-frost" />
+        <div className="hero-corner">🧊</div>
+        <img src="logo-white.png" alt="Hielo Saladillo" className="hero-logo fade-up" />
+        <div className="hero-tagline fade-up fade-up-1">Precios mayoristas · Saladillo</div>
+      </section>
+
+      {/* STICKY HEADER */}
+      <div className="sticky-header">
+        <img src="logo.png" alt="Hielo Saladillo" className="sticky-logo" />
+        <div className="header-right">
+
+          <button className="cart-btn" onClick={()=>setCartOpen(true)}>
+            🛒 {totalItems>0&&<span className="cart-badge">{totalItems}</span>}
+          </button>
+        </div>
+      </div>
+
+      {/* CATALOG */}
+      <section className="catalog" id="catalog">
+        <div className="brand-tabs">
+          {BRANDS.map(b=>(
+            <button key={b.id} className={`brand-tab ${brand===b.id?"active":""}`} onClick={()=>setBrand(b.id)}>{b.label}</button>
+          ))}
+        </div>
+
+        {grouped.map(({ brandId, items }) => (
+          <div key={brandId}>
+            {brand === "todos" && (
+              <div className="brand-header">
+                <div className="brand-name">{brandLabel[brandId]||brandId}</div>
+                <div className="brand-count">{items.length} productos</div>
+              </div>
+            )}
+            {brandId === "hielo" && (
+              <div style={{background:"var(--ice-lt)",border:"1.5px solid var(--ice)",borderRadius:6,padding:"9px 12px",marginBottom:14,fontSize:13,fontWeight:600,color:"var(--navy)",display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:16}}>ℹ️</span> Precio mayorista válido a partir de <strong>10 unidades</strong>
+              </div>
+            )}
+            <div className="products">
+              {items.map(p=>(
+                <ProductRow key={p.id} product={p} qty={quantities[p.id]||0}
+                  onAdd={()=>add(p.id)} onRemove={()=>remove(p.id)} mode={mode} />
+              ))}
+            </div>
+            {brand === "todos" && <div className="brand-divider" />}
+          </div>
+        ))}
+      </section>
+
+      {/* CONTACT */}
+      <section className="contact-section">
+        <div className="contact-inner">
+          <div className="contact-bottom-text">
+            <div className="contact-eyebrow">Contacto</div>
+            <div className="contact-title">¿Necesitás más info?</div>
+            <div className="contact-sub">Escribinos y te respondemos a la brevedad.<br/>También podés hacer tu pedido desde el catálogo.</div>
+            <div className="contact-address">📍 Reynoso 3296 (esq. Mitre) · Saladillo</div>
+            <a className="wa-link" href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              Escribirnos por WhatsApp
+            </a>
+          </div>
+          <div className="map-wrap">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3243.1468099406948!2d-59.768086324040574!3d-35.624107112101804!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95bde0b8a7aaec4b%3A0x18aeb0bbceed33af!2sEmiliano%20Reynoso%203296%2C%20Saladillo%2C%20Provincia%20de%20Buenos%20Aires!5e0!3m2!1ses!2sar!4v1777384130146!5m2!1ses!2sar"
+              loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen
+            />
+          </div>
+        </div>
+
+        <div className="contact-footer">© {new Date().getFullYear()} Hielo Saladillo · Saladillo, Buenos Aires</div>
+      </section>
+
+      {/* BOTTOM BAR */}
+      <div className={`bottom-bar ${totalItems===0?"hidden":""}`} onClick={()=>setCartOpen(true)}>
+        <div className="bottom-bar-left">
+          <div className="bottom-bar-items">{totalItems} producto{totalItems!==1?"s":""}</div>
+          <div className="bottom-bar-price">{fmtARS(totalPrice)}</div>
+        </div>
+        <div className="bottom-bar-action">Ver pedido →</div>
+      </div>
+
+      <CartDrawer open={cartOpen} onClose={()=>setCartOpen(false)} cart={cart} mode={mode}
+        onRemove={removeAll}
+        onSend={()=>{ setQuantities({}); setCartOpen(false); }} />
+
+      {showPin && (
+        <PinModal
+          onSuccess={()=>{ setShowPin(false); window.location.href="index.html#admin"; }}
+          onCancel={()=>{ setShowPin(false); window.location.hash=""; }}
+        />
+      )}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

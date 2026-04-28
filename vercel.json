@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/mayorista", "destination": "/mayorista.html" },
+    { "source": "/minorista", "destination": "/minorista.html" }
+  ]
+}
