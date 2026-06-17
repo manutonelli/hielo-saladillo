@@ -20,23 +20,18 @@ async function fetchDriveStock() {
   }
 }
 
-// Writes updated stock values back to the Drive CSV
+// Writes updated stock values back to the Drive CSV. Returns error string or null.
 async function pushStockToDrive(updates) {
-  // updates: { [csvCodigo]: newStock }
-  try {
-    const csv = await downloadCSV(STOCK_FILE_ID);
-    const { headers, rows } = parseCSV(csv);
-    const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
-    rows.forEach(r => {
-      if (r.codigo in updates) {
-        r.stock = String(updates[r.codigo]);
-        r.actualizado = now;
-      }
-    });
-    await uploadCSV(STOCK_FILE_ID, serializeCSV(headers, rows));
-  } catch (e) {
-    console.error('[gdrive] pushStockToDrive:', e.message);
-  }
+  const csv = await downloadCSV(STOCK_FILE_ID);
+  const { headers, rows } = parseCSV(csv);
+  const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
+  rows.forEach(r => {
+    if (r.codigo in updates) {
+      r.stock = String(updates[r.codigo]);
+      r.actualizado = now;
+    }
+  });
+  await uploadCSV(STOCK_FILE_ID, serializeCSV(headers, rows));
 }
 
 const UNMAPPED = new Set([null, undefined]);
@@ -109,11 +104,17 @@ module.exports = async (req, res) => {
           updates[csvId] = typeof p.stock === 'number' ? p.stock : parseInt(p.stock, 10) || 0;
         }
       });
+      let driveError = null;
       if (Object.keys(updates).length > 0) {
-        await pushStockToDrive(updates);
+        try {
+          await pushStockToDrive(updates);
+        } catch (e) {
+          driveError = e.message;
+          console.error('[gdrive] pushStockToDrive:', e.message);
+        }
       }
 
-      return res.status(200).json({ ok: true });
+      return res.status(200).json({ ok: true, driveError });
     } catch (e) {
       return res.status(500).json({ error: e.message });
     }
