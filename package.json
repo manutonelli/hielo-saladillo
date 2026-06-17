@@ -2,6 +2,7 @@
   "name": "hielo-saladillo",
   "version": "1.0.0",
   "dependencies": {
-    "@vercel/blob": "^2.3.3"
+    "@vercel/blob": "^2.3.3",
+    "google-auth-library": "^9.15.1"
   }
 }
