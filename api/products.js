@@ -39,7 +39,7 @@ async function pushStockToDrive(updates) {
   }
 }
 
-const UNMAPPED = new Set(['--', '---', null, undefined]);
+const UNMAPPED = new Set([null, undefined]);
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
