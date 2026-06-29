@@ -6,7 +6,13 @@ const BLOB_KEY = 'hs-products.json';
 const ADMIN_PIN = process.env.ADMIN_PIN || '2148';
 const STOCK_FILE_ID = process.env.GOOGLE_DRIVE_STOCK_FILE_ID || '10IsnhqAOY263GgtYnu1EeqkZn7HA39Bb';
 
-// Returns { [csvCodigo]: { stock, retail, mayor } } or null on error
+// Reverse map: csvCodigo → appId
+const CSV_TO_APP = {};
+for (const [appId, csvId] of Object.entries(STOCK_MAP)) {
+  if (csvId != null) CSV_TO_APP[csvId] = appId;
+}
+
+// Returns { [csvCodigo]: { stock, retail, mayor, nombre } } or null on error
 async function fetchDriveData() {
   try {
     const csv = await downloadCSV(STOCK_FILE_ID);
@@ -18,6 +24,7 @@ async function fetchDriveData() {
         stock: parseInt(r.stock, 10) || 0,
         retail: parseFloat(r.precio_minorista) || null,
         mayor: parseFloat(r.precio_comercio) || null,
+        nombre: r.nombre || '',
       };
     });
     return map;
@@ -27,7 +34,6 @@ async function fetchDriveData() {
   }
 }
 
-// Writes updated stock values back to the Drive CSV. Returns error string or null.
 async function pushStockToDrive(updates) {
   const csv = await downloadCSV(STOCK_FILE_ID);
   const { headers, rows, sep } = parseCSV(csv);
@@ -41,7 +47,14 @@ async function pushStockToDrive(updates) {
   await uploadCSV(STOCK_FILE_ID, serializeCSV(headers, rows, sep));
 }
 
-const UNMAPPED = new Set([null, undefined]);
+// Limpia el nombre del CSV: quita el código numérico inicial ("1082 ACAPULCO..." → "ACAPULCO...")
+function cleanCsvName(nombre) {
+  return nombre.replace(/^\d+\s+/, '').trim();
+}
+
+function detectBrand(nombre) {
+  return nombre.toUpperCase().includes('HIELO') ? 'hielo' : 'helados';
+}
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -50,44 +63,62 @@ module.exports = async (req, res) => {
 
   if (req.method === 'OPTIONS') { res.status(204).end(); return; }
 
-  // GET — devuelve productos (metadata desde Blob, stock desde Drive)
+  // GET — catálogo construido desde CSV, enriquecido con metadata del Blob
   if (req.method === 'GET') {
     res.setHeader('Cache-Control', 'no-store');
     try {
-      let products = null;
+      // Carga metadata guardada (nombres, fotos, etc.)
+      let blobById = {};
+      try {
+        const { blobs } = await list({ prefix: BLOB_KEY, limit: 1 });
+        if (blobs.length > 0) {
+          const r = await fetch(blobs[0].url, {
+            headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+          });
+          if (r.ok) {
+            const arr = await r.json();
+            if (Array.isArray(arr)) arr.forEach(p => { blobById[p.id] = p; });
+          }
+        }
+      } catch (_) {}
 
-      const { blobs } = await list({ prefix: BLOB_KEY, limit: 1 });
-      if (blobs.length > 0) {
-        const r = await fetch(blobs[0].url, {
-          headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
-        });
-        if (r.ok) products = await r.json();
+      const driveData = await fetchDriveData();
+      if (!driveData) {
+        // Sin Drive: devuelve el Blob tal cual como fallback
+        const fallback = Object.values(blobById);
+        return res.status(200).json(fallback.length ? fallback : null);
       }
 
-      if (products) {
-        const driveData = await fetchDriveData();
-        if (driveData) {
-          products = products
-            .map(p => {
-              const csvId = STOCK_MAP[p.id];
-              if (csvId && !UNMAPPED.has(csvId) && csvId in driveData) {
-                const d = driveData[csvId];
-                return {
-                  ...p,
-                  stock: d.stock,
-                  ...(d.retail !== null && { retail: d.retail }),
-                  ...(d.mayor !== null && { mayor: d.mayor }),
-                };
-              }
-              // Producto sin mapeo al CSV: se muestra con datos del Blob
-              return p;
-            })
-            // Solo muestra productos con stock > 0 que tengan mapeo en el CSV
-            .filter(p => {
-              const csvId = STOCK_MAP[p.id];
-              if (csvId && !UNMAPPED.has(csvId)) return p.stock > 0;
-              return true; // Sin mapeo: siempre visible
-            });
+      // Construye el catálogo desde el CSV (solo stock > 0)
+      const products = [];
+      for (const [csvId, data] of Object.entries(driveData)) {
+        if (data.stock <= 0) continue;
+
+        const appId = CSV_TO_APP[csvId] || csvId;
+        const existing = blobById[appId];
+
+        if (existing) {
+          // Producto conocido: usa metadata del Blob + precios/stock del CSV
+          products.push({
+            ...existing,
+            stock: data.stock,
+            ...(data.retail !== null && { retail: data.retail }),
+            ...(data.mayor !== null && { mayor: data.mayor }),
+          });
+        } else {
+          // Producto nuevo en el CSV: se crea automáticamente
+          const nombre = cleanCsvName(data.nombre);
+          products.push({
+            id: appId,
+            name: nombre,
+            brand: detectBrand(data.nombre),
+            retail: data.retail || 0,
+            mayor: data.mayor || 0,
+            stock: data.stock,
+            photo: '',
+            desc: '',
+            visible: true,
+          });
         }
       }
 
@@ -97,7 +128,7 @@ module.exports = async (req, res) => {
     }
   }
 
-  // POST — guarda productos y sincroniza stock en Drive
+  // POST — guarda metadata en Blob y sincroniza stock en Drive
   if (req.method === 'POST') {
     if (req.headers['x-admin-pin'] !== ADMIN_PIN) {
       return res.status(401).json({ error: 'PIN incorrecto' });
@@ -109,7 +140,6 @@ module.exports = async (req, res) => {
       const body = Buffer.concat(chunks).toString('utf8');
       const products = JSON.parse(body);
 
-      // Guarda metadata + stock actual en Blob (fallback)
       await put(BLOB_KEY, body, {
         access: 'private',
         contentType: 'application/json',
@@ -120,11 +150,12 @@ module.exports = async (req, res) => {
       // Sincroniza stock con Google Drive
       const updates = {};
       products.forEach(p => {
-        const csvId = STOCK_MAP[p.id];
-        if (csvId && !UNMAPPED.has(csvId)) {
+        const csvId = STOCK_MAP[p.id] || (CSV_TO_APP[p.id] ? p.id : null);
+        if (csvId) {
           updates[csvId] = typeof p.stock === 'number' ? p.stock : parseInt(p.stock, 10) || 0;
         }
       });
+
       let driveError = null;
       if (Object.keys(updates).length > 0) {
         try {
