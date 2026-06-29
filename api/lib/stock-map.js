@@ -1,7 +1,7 @@
 // Maps app product IDs → CSV "codigo" in the Google Drive stock file
 module.exports = {
   // HIELO
-  'H15': '15KGMA',
+  'H15': '15KG +',
   'H03': '3KG',
 
   // ACAPULCO
