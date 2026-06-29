@@ -17,7 +17,7 @@ async function fetchDriveData() {
       map[r.codigo] = {
         stock: parseInt(r.stock, 10) || 0,
         retail: parseFloat(r.precio_minorista) || null,
-        mayor: parseFloat(r.precio_base) || null,
+        mayor: parseFloat(r.precio_comercio) || null,
       };
     });
     return map;
