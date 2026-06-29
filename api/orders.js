@@ -27,7 +27,7 @@ async function saveOrders(orders) {
   });
 }
 
-async function restoreStock(items) {
+async function adjustStock(items, sign) {
   try {
     const csv = await downloadCSV(STOCK_FILE_ID);
     const { headers, rows, sep } = parseCSV(csv);
@@ -36,16 +36,20 @@ async function restoreStock(items) {
     items.forEach(i => { byCode[i.csvId] = (byCode[i.csvId] || 0) + i.qty; });
     rows.forEach(r => {
       if (r.codigo in byCode) {
-        r.stock = String((parseInt(r.stock, 10) || 0) + byCode[r.codigo]);
+        const current = parseInt(r.stock, 10) || 0;
+        r.stock = String(Math.max(0, current + sign * byCode[r.codigo]));
         r.actualizado = now;
       }
     });
     await uploadCSV(STOCK_FILE_ID, serializeCSV(headers, rows, sep));
   } catch (e) {
-    console.error('[orders] restoreStock:', e.message);
+    console.error('[orders] adjustStock:', e.message);
     throw e;
   }
 }
+
+function restoreStock(items) { return adjustStock(items, +1); }
+function deductStock(items)  { return adjustStock(items, -1); }
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -84,7 +88,11 @@ module.exports = async (req, res) => {
       };
       orders.unshift(order);
       await saveOrders(orders);
-      return res.status(200).json({ ok: true, id: order.id });
+
+      let driveError = null;
+      try { await deductStock(order.items); } catch (e) { driveError = e.message; }
+
+      return res.status(200).json({ ok: true, id: order.id, driveError });
     } catch (e) {
       return res.status(500).json({ error: e.message });
     }
