@@ -12,13 +12,6 @@ for (const [appId, csvId] of Object.entries(STOCK_MAP)) {
   if (csvId != null) CSV_TO_APP[csvId] = appId;
 }
 
-// Códigos del CSV que no deben aparecer como productos en la app
-const SKIP_CSV = new Set([
-  '15KG +', '15KG MIN',          // variantes hielo 15kg (la app solo muestra H15 → 15KGMA)
-  '3KG REV', '3KG +',            // variantes hielo 3kg (la app solo muestra H03 → 3KG)
-  '5',                            // hielo eventos reventa
-  'CARRO',                        // alquiler de carro
-]);
 
 // Returns { [csvCodigo]: { stock, retail, mayor, nombre } } or null on error
 async function fetchDriveData() {
@@ -97,11 +90,9 @@ module.exports = async (req, res) => {
         return res.status(200).json(fallback.length ? fallback : null);
       }
 
-      // Construye el catálogo desde el CSV (solo stock > 0)
+      // Construye el catálogo desde el CSV
       const products = [];
       for (const [csvId, data] of Object.entries(driveData)) {
-        if (data.stock <= 0) continue;
-        if (SKIP_CSV.has(csvId)) continue;
 
         const appId = CSV_TO_APP[csvId] || csvId;
         const existing = blobById[appId];
