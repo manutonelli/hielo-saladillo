@@ -12,6 +12,7 @@ async function loadOrders() {
     if (!blobs.length) return [];
     const r = await fetch(blobs[0].url, {
       headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+      cache: 'no-store',
     });
     if (!r.ok) return [];
     const data = await r.json();
