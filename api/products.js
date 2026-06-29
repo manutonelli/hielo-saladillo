@@ -67,19 +67,27 @@ module.exports = async (req, res) => {
       if (products) {
         const driveData = await fetchDriveData();
         if (driveData) {
-          products = products.map(p => {
-            const csvId = STOCK_MAP[p.id];
-            if (csvId && !UNMAPPED.has(csvId) && csvId in driveData) {
-              const d = driveData[csvId];
-              return {
-                ...p,
-                stock: d.stock,
-                ...(d.retail !== null && { retail: d.retail }),
-                ...(d.mayor !== null && { mayor: d.mayor }),
-              };
-            }
-            return p;
-          });
+          products = products
+            .map(p => {
+              const csvId = STOCK_MAP[p.id];
+              if (csvId && !UNMAPPED.has(csvId) && csvId in driveData) {
+                const d = driveData[csvId];
+                return {
+                  ...p,
+                  stock: d.stock,
+                  ...(d.retail !== null && { retail: d.retail }),
+                  ...(d.mayor !== null && { mayor: d.mayor }),
+                };
+              }
+              // Producto sin mapeo al CSV: se muestra con datos del Blob
+              return p;
+            })
+            // Solo muestra productos con stock > 0 que tengan mapeo en el CSV
+            .filter(p => {
+              const csvId = STOCK_MAP[p.id];
+              if (csvId && !UNMAPPED.has(csvId)) return p.stock > 0;
+              return true; // Sin mapeo: siempre visible
+            });
         }
       }
 
