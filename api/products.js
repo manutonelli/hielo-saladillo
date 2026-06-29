@@ -1,4 +1,4 @@
-const { put, list } = require('@vercel/blob');
+const { put, list, del } = require('@vercel/blob');
 const { downloadCSV, uploadCSV, parseCSV, serializeCSV } = require('./lib/gdrive');
 const STOCK_MAP = require('./lib/stock-map');
 
@@ -66,7 +66,7 @@ function detectBrand(nombre) {
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-pin');
 
   if (req.method === 'OPTIONS') { res.status(204).end(); return; }
@@ -176,6 +176,22 @@ module.exports = async (req, res) => {
       }
 
       return res.status(200).json({ ok: true, driveError });
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
+  }
+
+  // DELETE — borra el Blob (solo admin)
+  if (req.method === 'DELETE') {
+    if (req.headers['x-admin-pin'] !== ADMIN_PIN) {
+      return res.status(401).json({ error: 'PIN incorrecto' });
+    }
+    try {
+      const { blobs } = await list({ prefix: BLOB_KEY, limit: 10 });
+      if (blobs.length > 0) {
+        await del(blobs.map(b => b.url));
+      }
+      return res.status(200).json({ ok: true, deleted: blobs.length });
     } catch (e) {
       return res.status(500).json({ error: e.message });
     }
