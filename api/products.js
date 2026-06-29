@@ -99,9 +99,10 @@ module.exports = async (req, res) => {
 
         if (existing) {
           if (existing.visible === false) continue;
-          // Producto conocido: usa metadata del Blob + precios/stock del CSV
+          // Producto conocido: nombre y precios del CSV, resto de metadata del Blob
           products.push({
             ...existing,
+            name: cleanCsvName(data.nombre),
             stock: data.stock,
             ...(data.retail !== null && { retail: data.retail }),
             ...(data.mayor !== null && { mayor: data.mayor }),
