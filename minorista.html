@@ -675,6 +675,9 @@ function AdminPanel({ products, serverMode, onClose, onUpdate }) {
     if (!confirm(`¿Eliminar el producto ${id}?`)) return;
     onUpdate(products.filter(p=>p.id!==id), notify);
   }
+  function handleToggleVisible(id) {
+    onUpdate(products.map(p=>p.id===id?{...p,visible:p.visible===false?true:false}:p), notify);
+  }
 
   return (
     <div className="admin-overlay">
@@ -695,18 +698,19 @@ function AdminPanel({ products, serverMode, onClose, onUpdate }) {
         )}
         <button className="admin-add-btn" onClick={()=>setAdding(true)}>+ Agregar producto</button>
         {products.map(p=>(
-          <div className="admin-prod-row" key={p.id}>
+          <div className="admin-prod-row" key={p.id} style={p.visible===false?{opacity:.45}:{}}>
             <div className="admin-prod-img">
               {p.photo
                 ? <img src={p.photo} alt="" />
                 : <span style={{fontSize:20}}>{p.brand==='hielo'?'🧊':'🍦'}</span>}
             </div>
             <div className="admin-prod-info">
-              <div className="admin-prod-code">{p.id}</div>
+              <div className="admin-prod-code">{p.id}{p.visible===false&&<span style={{marginLeft:6,fontSize:9,background:'#FEE2E2',color:'#B91C1C',padding:'1px 5px',borderRadius:3,fontWeight:700}}>OCULTO</span>}</div>
               <div className="admin-prod-name">{p.name}</div>
               <div className="admin-prod-prices">Min: {fmtARS(p.retail)} · May: {fmtARS(p.mayor)} · Stock: {p.stock}</div>
             </div>
             <div className="admin-prod-actions">
+              <button className="admin-action-btn" title={p.visible===false?'Mostrar':'Ocultar'} onClick={()=>handleToggleVisible(p.id)}>{p.visible===false?'👁':'🚫'}</button>
               <button className="admin-action-btn" onClick={()=>setEditId(p.id)}>Editar</button>
               <button className="admin-action-btn danger" onClick={()=>handleDelete(p.id)}>🗑</button>
             </div>
@@ -758,12 +762,13 @@ function App() {
   function remove(id) { setQuantities(q=>({...q,[id]:Math.max((q[id]||0)-1,0)})); }
   function removeAll(id) { setQuantities(q=>({...q,[id]:0})); }
 
+  const visible = useMemo(()=>products.filter(p=>p.visible!==false),[products]);
   const filtered = useMemo(()=>{
-    if(brand==="todos") return products;
-    if(brand==="hielo") return products.filter(p=>p.brand==="hielo");
-    if(brand==="helados") return products.filter(p=>p.brand!=="hielo");
-    return products;
-  },[brand,products]);
+    if(brand==="todos") return visible;
+    if(brand==="hielo") return visible.filter(p=>p.brand==="hielo");
+    if(brand==="helados") return visible.filter(p=>p.brand!=="hielo");
+    return visible;
+  },[brand,visible]);
 
   const cart = useMemo(()=>
     products.filter(p=>(quantities[p.id]||0)>0).map(p=>({product:p,qty:quantities[p.id],price:getPrice(p)}))
@@ -775,10 +780,10 @@ function App() {
   const grouped = useMemo(()=>{
     if(brand!=="todos") return [{brandId:brand,items:filtered}];
     return [
-      {brandId:"hielo",items:products.filter(p=>p.brand==="hielo")},
-      {brandId:"helados",items:products.filter(p=>p.brand!=="hielo")},
+      {brandId:"hielo",items:visible.filter(p=>p.brand==="hielo")},
+      {brandId:"helados",items:visible.filter(p=>p.brand!=="hielo")},
     ];
-  },[filtered,brand,products]);
+  },[filtered,brand,visible]);
 
   const brandLabel = {hielo:"Hielo",helados:"Helados"};
 

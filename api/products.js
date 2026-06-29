@@ -98,6 +98,7 @@ module.exports = async (req, res) => {
         const existing = blobById[appId];
 
         if (existing) {
+          if (existing.visible === false) continue;
           // Producto conocido: usa metadata del Blob + precios/stock del CSV
           products.push({
             ...existing,
