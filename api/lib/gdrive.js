@@ -58,23 +58,28 @@ async function uploadCSV(fileId, csvContent) {
   }
 }
 
+function detectSeparator(line) {
+  return line.includes(';') ? ';' : ',';
+}
+
 function parseCSV(text) {
   const lines = text.replace(/^﻿/, '').trim().split(/\r?\n/);
-  if (lines.length < 2) return { headers: [], rows: [] };
-  const headers = lines[0].split(',').map(h => h.trim());
+  if (lines.length < 2) return { headers: [], rows: [], sep: ';' };
+  const sep = detectSeparator(lines[0]);
+  const headers = lines[0].split(sep).map(h => h.trim());
   const rows = lines.slice(1).map(line => {
-    const vals = line.split(',');
+    const vals = line.split(sep);
     const row = {};
     headers.forEach((h, i) => { row[h] = (vals[i] ?? '').trim(); });
     return row;
   });
-  return { headers, rows };
+  return { headers, rows, sep };
 }
 
-function serializeCSV(headers, rows) {
+function serializeCSV(headers, rows, sep = ';') {
   const lines = [
-    '﻿' + headers.join(','),
-    ...rows.map(r => headers.map(h => r[h] ?? '').join(',')),
+    '﻿' + headers.join(sep),
+    ...rows.map(r => headers.map(h => r[h] ?? '').join(sep)),
   ];
   return lines.join('\r\n');
 }

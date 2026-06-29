@@ -4,18 +4,25 @@ const STOCK_MAP = require('./lib/stock-map');
 
 const BLOB_KEY = 'hs-products.json';
 const ADMIN_PIN = process.env.ADMIN_PIN || '2148';
-const STOCK_FILE_ID = process.env.GOOGLE_DRIVE_STOCK_FILE_ID || '111TXPvhraqZrzEd252OuChiUzhn0LvfA';
+const STOCK_FILE_ID = process.env.GOOGLE_DRIVE_STOCK_FILE_ID || '10IsnhqAOY263GgtYnu1EeqkZn7HA39Bb';
 
-// Returns { [csvCodigo]: stock } or null on error
-async function fetchDriveStock() {
+// Returns { [csvCodigo]: { stock, retail, mayor } } or null on error
+async function fetchDriveData() {
   try {
     const csv = await downloadCSV(STOCK_FILE_ID);
     const { rows } = parseCSV(csv);
     const map = {};
-    rows.forEach(r => { if (r.codigo) map[r.codigo] = parseInt(r.stock, 10) || 0; });
+    rows.forEach(r => {
+      if (!r.codigo) return;
+      map[r.codigo] = {
+        stock: parseInt(r.stock, 10) || 0,
+        retail: parseFloat(r.precio_minorista) || null,
+        mayor: parseFloat(r.precio_base) || null,
+      };
+    });
     return map;
   } catch (e) {
-    console.error('[gdrive] fetchDriveStock:', e.message);
+    console.error('[gdrive] fetchDriveData:', e.message);
     return null;
   }
 }
@@ -23,7 +30,7 @@ async function fetchDriveStock() {
 // Writes updated stock values back to the Drive CSV. Returns error string or null.
 async function pushStockToDrive(updates) {
   const csv = await downloadCSV(STOCK_FILE_ID);
-  const { headers, rows } = parseCSV(csv);
+  const { headers, rows, sep } = parseCSV(csv);
   const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
   rows.forEach(r => {
     if (r.codigo in updates) {
@@ -31,7 +38,7 @@ async function pushStockToDrive(updates) {
       r.actualizado = now;
     }
   });
-  await uploadCSV(STOCK_FILE_ID, serializeCSV(headers, rows));
+  await uploadCSV(STOCK_FILE_ID, serializeCSV(headers, rows, sep));
 }
 
 const UNMAPPED = new Set([null, undefined]);
@@ -58,12 +65,18 @@ module.exports = async (req, res) => {
       }
 
       if (products) {
-        const driveStock = await fetchDriveStock();
-        if (driveStock) {
+        const driveData = await fetchDriveData();
+        if (driveData) {
           products = products.map(p => {
             const csvId = STOCK_MAP[p.id];
-            if (csvId && !UNMAPPED.has(csvId) && csvId in driveStock) {
-              return { ...p, stock: driveStock[csvId] };
+            if (csvId && !UNMAPPED.has(csvId) && csvId in driveData) {
+              const d = driveData[csvId];
+              return {
+                ...p,
+                stock: d.stock,
+                ...(d.retail !== null && { retail: d.retail }),
+                ...(d.mayor !== null && { mayor: d.mayor }),
+              };
             }
             return p;
           });
