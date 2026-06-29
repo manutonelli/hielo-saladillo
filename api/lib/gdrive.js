@@ -59,7 +59,9 @@ async function uploadCSV(fileId, csvContent) {
 }
 
 function detectSeparator(line) {
-  return line.includes(';') ? ';' : ',';
+  if (line.includes('\t')) return '\t';
+  if (line.includes(';')) return ';';
+  return ',';
 }
 
 function parseCSV(text) {
