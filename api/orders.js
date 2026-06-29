@@ -1,5 +1,6 @@
 const { put, list } = require('@vercel/blob');
 const { downloadCSV, uploadCSV, parseCSV, serializeCSV } = require('./lib/gdrive');
+const STOCK_MAP = require('./lib/stock-map');
 
 const ORDERS_KEY = 'hs-orders.json';
 const ADMIN_PIN = process.env.ADMIN_PIN || '2148';
@@ -33,7 +34,10 @@ async function adjustStock(items, sign) {
     const { headers, rows, sep } = parseCSV(csv);
     const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
     const byCode = {};
-    items.forEach(i => { byCode[i.csvId] = (byCode[i.csvId] || 0) + i.qty; });
+    items.forEach(i => {
+      const csvId = STOCK_MAP[i.id] || STOCK_MAP[i.csvId] || i.csvId || i.id;
+      if (csvId) byCode[csvId] = (byCode[csvId] || 0) + i.qty;
+    });
     rows.forEach(r => {
       if (r.codigo in byCode) {
         const current = parseInt(r.stock, 10) || 0;
