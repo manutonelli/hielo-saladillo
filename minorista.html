@@ -321,6 +321,22 @@
     .form-save-btn:hover { background: var(--navy2); }
     .form-cancel-btn { padding: 13px 20px; border: 1.5px solid var(--gray-2); border-radius: 6px; background: var(--white); color: var(--gray-3); font-family: var(--body); font-size: 14px; font-weight: 600; cursor: pointer; transition: all .15s; }
     .form-cancel-btn:hover { border-color: var(--navy); color: var(--navy); }
+    .admin-tabs { display: flex; gap: 0; border-bottom: 1.5px solid var(--gray-2); margin-bottom: 16px; }
+    .admin-tab { padding: 10px 18px; font-size: 13px; font-weight: 700; border: none; background: none; cursor: pointer; color: var(--gray-3); border-bottom: 2.5px solid transparent; margin-bottom: -1.5px; font-family: var(--body); transition: all .15s; }
+    .admin-tab.active { color: var(--navy); border-bottom-color: var(--navy); }
+    .order-card { border: 1.5px solid var(--gray-2); border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; }
+    .order-card.cancelado { opacity: .5; }
+    .order-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+    .order-name { font-size: 14px; font-weight: 700; color: var(--navy); }
+    .order-meta { font-size: 11px; color: var(--gray-3); margin-top: 2px; }
+    .order-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; flex-shrink: 0; }
+    .order-badge.confirmado { background: #DCFCE7; color: #15803D; }
+    .order-badge.cancelado { background: #FEE2E2; color: #B91C1C; }
+    .order-items { font-size: 12px; color: var(--text); margin: 6px 0; line-height: 1.6; }
+    .order-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+    .order-total { font-size: 13px; font-weight: 700; color: var(--navy); }
+    .order-cancel-btn { padding: 5px 12px; border-radius: 4px; border: 1.5px solid var(--danger); background: none; color: var(--danger); font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--body); transition: all .15s; }
+    .order-cancel-btn:hover { background: var(--danger); color: #fff; }
   </style>
 </head>
 <body>
@@ -450,7 +466,7 @@ function CartDrawer({ open, onClose, cart, mode, onSend, onRemove }) {
   const total = cart.reduce((s,i)=>s+i.price*i.qty, 0);
 
 
-  function handleSend() {
+  async function handleSend() {
     const lines = cart.map(i=>`• ${i.product.name} × ${i.qty} = ${fmtARS(i.price*i.qty)}`);
     const msg = [
       `*Pedido — Hielo Saladillo*`, ``,
@@ -462,6 +478,18 @@ function CartDrawer({ open, onClose, cart, mode, onSend, onRemove }) {
       `*TOTAL: ${fmtARS(total)}*`,
     ].filter(x=>x!==undefined&&x!==false&&x!=="").join("\n");
     window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`,"_blank");
+    fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: name.trim(),
+        delivery,
+        address: address.trim(),
+        mode,
+        items: cart.map(i=>({ id: i.product.id, name: i.product.name, qty: i.qty, price: i.price, csvId: i.product.id })),
+        total,
+      }),
+    }).catch(()=>{});
     onSend && onSend();
   }
 
@@ -645,7 +673,74 @@ function ProductForm({ product, onSave, onCancel }) {
   );
 }
 
+function OrdersPanel({ pin }) {
+  const [orders, setOrders] = useState(null);
+  const [cancelling, setCancelling] = useState(null);
+  const [msg, setMsg] = useState(null);
+
+  useEffect(()=>{
+    fetch('/api/orders', { headers: { 'x-admin-pin': pin } })
+      .then(r=>r.json()).then(setOrders).catch(()=>setOrders([]));
+  }, []);
+
+  async function handleCancel(id) {
+    if (!confirm('¿Cancelar este pedido y restaurar el stock?')) return;
+    setCancelling(id);
+    try {
+      const r = await fetch('/api/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        body: JSON.stringify({ id }),
+      });
+      const data = await r.json();
+      if (data.ok) {
+        setOrders(prev => prev.map(o => o.id===id ? {...o, status:'cancelado'} : o));
+        setMsg(data.driveError ? `Cancelado, pero error en Drive: ${data.driveError}` : '✓ Pedido cancelado y stock restaurado');
+      } else {
+        setMsg(`Error: ${data.error}`);
+      }
+    } catch(e) { setMsg('Error de red'); }
+    setCancelling(null);
+    setTimeout(()=>setMsg(null), 4000);
+  }
+
+  function fmtDate(iso) {
+    const d = new Date(iso);
+    return d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit'}) + ' ' + d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  }
+
+  if (!orders) return <div style={{padding:32,textAlign:'center',color:'var(--gray-3)',fontSize:13}}>Cargando pedidos…</div>;
+  if (!orders.length) return <div style={{padding:32,textAlign:'center',color:'var(--gray-3)',fontSize:13}}>No hay pedidos registrados.</div>;
+
+  return (
+    <div>
+      {msg && <div style={{background:'#F0FDF4',border:'1.5px solid #86EFAC',borderRadius:6,padding:'10px 12px',marginBottom:12,fontSize:13,color:'#15803D',fontWeight:600}}>{msg}</div>}
+      {orders.map(o=>(
+        <div key={o.id} className={`order-card ${o.status}`}>
+          <div className="order-header">
+            <div>
+              <div className="order-name">{o.name || 'Sin nombre'}</div>
+              <div className="order-meta">{fmtDate(o.createdAt)} · {o.mode?.toUpperCase()} · {o.delivery==='delivery'?`Delivery${o.address?` — ${o.address}`:''}` : 'Retiro en local'}</div>
+            </div>
+            <span className={`order-badge ${o.status}`}>{o.status}</span>
+          </div>
+          <div className="order-items">{o.items.map(i=>`${i.name} ×${i.qty}`).join(' · ')}</div>
+          <div className="order-footer">
+            <div className="order-total">{fmtARS(o.total)}</div>
+            {o.status==='confirmado' && (
+              <button className="order-cancel-btn" disabled={cancelling===o.id} onClick={()=>handleCancel(o.id)}>
+                {cancelling===o.id ? 'Cancelando…' : 'Cancelar pedido'}
+              </button>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function AdminPanel({ products, serverMode, onClose, onUpdate }) {
+  const [tab, setTab] = useState('productos');
   const [editId, setEditId] = useState(null);
   const [adding, setAdding] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -682,7 +777,7 @@ function AdminPanel({ products, serverMode, onClose, onUpdate }) {
   return (
     <div className="admin-overlay">
       <div className="admin-top">
-        <div className="admin-top-title">⚙️ Administrador · {products.length} productos</div>
+        <div className="admin-top-title">⚙️ Administrador</div>
         <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
           {!serverMode && <span style={{fontSize:11,color:'#FCD34D',fontWeight:600}}>Sin servidor</span>}
           {saved && <span style={{fontSize:12,color:'#86EFAC',fontWeight:600}}>✓ Guardado</span>}
@@ -691,6 +786,12 @@ function AdminPanel({ products, serverMode, onClose, onUpdate }) {
         </div>
       </div>
       <div className="admin-body">
+        <div className="admin-tabs">
+          <button className={`admin-tab ${tab==='productos'?'active':''}`} onClick={()=>setTab('productos')}>Productos</button>
+          <button className={`admin-tab ${tab==='pedidos'?'active':''}`} onClick={()=>setTab('pedidos')}>Pedidos</button>
+        </div>
+        {tab==='pedidos' && <OrdersPanel pin={ADMIN_PIN} />}
+        {tab==='productos' && <>
         {!serverMode && (
           <div style={{background:'#FEF3C7',border:'1.5px solid #FCD34D',borderRadius:6,padding:'10px 12px',marginBottom:16,fontSize:13,color:'#92400E'}}>
             ⚠️ Servidor no detectado. Los cambios no se guardarán en el CSV. Ejecutá <code>node server.js</code> para activar el modo persistente.
@@ -716,6 +817,7 @@ function AdminPanel({ products, serverMode, onClose, onUpdate }) {
             </div>
           </div>
         ))}
+        </>}
       </div>
       {editId && <ProductForm product={products.find(p=>p.id===editId)} onSave={handleEdit} onCancel={()=>setEditId(null)} />}
       {adding && <ProductForm product={null} onSave={handleAdd} onCancel={()=>setAdding(false)} />}
