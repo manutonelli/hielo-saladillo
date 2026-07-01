@@ -110,10 +110,10 @@ module.exports = async (req, res) => {
       };
 
       // Cada pedido se guarda en su propio blob — sin race condition
-      await saveOrder(order);
-
       let driveError = null;
-      try { await deductStock(order.items); } catch (e) { driveError = e.message; }
+      try { await deductStock(order.items); order.stockDeducted = true; } catch (e) { driveError = e.message; order.stockDeducted = false; }
+
+      await saveOrder(order);
 
       return res.status(200).json({ ok: true, id: order.id, driveError });
     } catch (e) {
@@ -138,10 +138,13 @@ module.exports = async (req, res) => {
 
       order.status = 'cancelado';
       order.cancelledAt = new Date().toISOString();
-      await saveOrder(order);
 
       let driveError = null;
-      try { await restoreStock(order.items); } catch (e) { driveError = e.message; }
+      if (order.stockDeducted !== false) {
+        try { await restoreStock(order.items); } catch (e) { driveError = e.message; }
+      }
+
+      await saveOrder(order);
 
       return res.status(200).json({ ok: true, driveError });
     } catch (e) {
