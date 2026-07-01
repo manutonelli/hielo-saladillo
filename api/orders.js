@@ -2,26 +2,44 @@ const { put, list } = require('@vercel/blob');
 const { downloadCSV, uploadCSV, parseCSV, serializeCSV } = require('./lib/gdrive');
 const STOCK_MAP = require('./lib/stock-map');
 
-const ORDERS_KEY = 'hs-orders.json';
+const ORDERS_PREFIX = 'hs-order-';
 const ADMIN_PIN = process.env.ADMIN_PIN || '2148';
 const STOCK_FILE_ID = process.env.GOOGLE_DRIVE_STOCK_FILE_ID || '10IsnhqAOY263GgtYnu1EeqkZn7HA39Bb';
 
+async function fetchBlob(url) {
+  const r = await fetch(url, {
+    headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+    cache: 'no-store',
+  });
+  if (!r.ok) return null;
+  return r.json();
+}
+
 async function loadOrders() {
   try {
-    const { blobs } = await list({ prefix: ORDERS_KEY, limit: 1 });
+    // Lista todos los blobs individuales de pedidos
+    let cursor;
+    const blobs = [];
+    do {
+      const res = await list({ prefix: ORDERS_PREFIX, limit: 1000, cursor });
+      blobs.push(...res.blobs);
+      cursor = res.cursor;
+    } while (cursor);
+
     if (!blobs.length) return [];
-    const r = await fetch(blobs[0].url, {
-      headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
-      cache: 'no-store',
-    });
-    if (!r.ok) return [];
-    const data = await r.json();
-    return Array.isArray(data) ? data : [];
+
+    // Fetch en paralelo y ordena por fecha desc
+    const orders = (await Promise.all(blobs.map(b => fetchBlob(b.url).catch(() => null))))
+      .filter(Boolean)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+    return orders;
   } catch (_) { return []; }
 }
 
-async function saveOrders(orders) {
-  await put(ORDERS_KEY, JSON.stringify(orders), {
+async function saveOrder(order) {
+  const key = `${ORDERS_PREFIX}${order.id}.json`;
+  await put(key, JSON.stringify(order), {
     access: 'private',
     contentType: 'application/json',
     addRandomSuffix: false,
@@ -72,14 +90,13 @@ module.exports = async (req, res) => {
     return res.status(200).json(orders);
   }
 
-  // POST — crear pedido (público, lo llama el frontend al confirmar)
+  // POST — crear pedido (público)
   if (req.method === 'POST') {
     const chunks = [];
     req.on('data', c => chunks.push(c));
     await new Promise(resolve => req.on('end', resolve));
     try {
       const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
-      const orders = await loadOrders();
       const order = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         createdAt: new Date().toISOString(),
@@ -91,8 +108,9 @@ module.exports = async (req, res) => {
         items: body.items || [],
         total: body.total || 0,
       };
-      orders.unshift(order);
-      await saveOrders(orders);
+
+      // Cada pedido se guarda en su propio blob — sin race condition
+      await saveOrder(order);
 
       let driveError = null;
       try { await deductStock(order.items); } catch (e) { driveError = e.message; }
@@ -120,15 +138,11 @@ module.exports = async (req, res) => {
 
       order.status = 'cancelado';
       order.cancelledAt = new Date().toISOString();
+      await saveOrder(order);
 
       let driveError = null;
-      try {
-        await restoreStock(order.items);
-      } catch (e) {
-        driveError = e.message;
-      }
+      try { await restoreStock(order.items); } catch (e) { driveError = e.message; }
 
-      await saveOrders(orders);
       return res.status(200).json({ ok: true, driveError });
     } catch (e) {
       return res.status(500).json({ error: e.message });
